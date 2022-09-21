@@ -1,0 +1,481 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<style type="text/css">
+/* ==========================================================================
+  Reset CSS 
+==========================================================================*/
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,canvas,details,embed,figure,figcaption,footer,header,hgroup,menu,nav,output,ruby,section,summary,time,mark,audio,video{margin:0;padding:0;border:0;font-size:100%;font:inherit;vertical-align:baseline;text-decoration:none}
+article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}
+body{line-height:1}
+ol,ul{list-style:none}
+blockquote,q{quotes:none}
+blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}
+table{border-collapse:collapse;border-spacing:0}
+/* nomal */
+  body {
+    margin: 8px;
+  }
+ body > table {
+    width: 500px;
+  }
+  table {
+    width: 100%;
+  }
+table.outer {
+}
+table.outer2 {
+    margin-bottom:5px;
+}
+
+table.inner {
+	width: 100%;
+	font-family: "Times New Roman";
+	font-size: 14pt;
+}
+  table td {
+    vertical-align: middle;
+  }
+td.outer{
+	border: 2px solid;
+    width: 150px;
+  padding: 1px;
+      border-collapse: collapse;
+}
+
+table.item {
+	font-size: 14pt;
+	border-collapse: collapse;
+	border: 1px solid;
+  margin-top: -1px;
+}
+
+
+td.letter {
+	border: 1px solid;
+	font-family: "ＭＳ ゴシック";
+	font-size: 9pt;
+}
+
+td.no {
+	border: 1px solid;
+	height: 26px;
+	width : 24px;
+	text-align: right;
+	font-weight: bold;
+	padding-right: 10px;
+}
+
+td.num {
+	border: 1px solid;
+	height: 27px;
+	width: 68px;
+	text-align: right;
+	padding-right: 10px;
+}
+
+td.item {
+	cellspacing: 1px;
+	height: 28px;
+	border: 1px solid;
+	font-size: 16px;
+	width: 50%;
+}
+
+td.item2 {
+	cellspacing: 1px;
+	height: 28px;
+	border: 1px solid;
+	font-size: 16px;
+	width: 450px;
+}
+
+td.item3{
+	cellspacing: 1px;
+	height: 28px;
+	border: 1px solid;
+	font-size: 16px;
+    text-align: center;
+}
+
+tr.odd {
+	background-color: #dddddd;
+}
+
+td.title {
+	font-size: 16pt;
+	width: 350px;
+	padding-left: 10px;
+
+}
+
+td.time {
+	font-family: "Times New Roman";
+	font-size: 10pt;
+	cellspacing: 1px;
+}
+
+</style>
+
+<title>
+	出荷員数チェックシート
+</title>
+<body>
+	<table>
+        <tr>
+            <td class="title">出荷員数チェックシート</td>
+            <td class="time">__Time__</td>
+        </tr>
+    </table>
+    <table class="outer2">
+        <tr>
+            <td>
+                <table class="item">
+                    <tr>
+                        <td class="item">作業日： __Date__</td>
+                        <td class="item">作業者： __Name__</td>
+                    </tr>
+                </table>
+                <table class="item">
+                    <tr>
+                        <td class="item">Lot No.： __LotNo__</td>
+                        <td class="item">管理No.： __ControlNo__</td>
+                    </tr>
+                </table>
+                    <table class="item">
+                        <tr>
+                            <td class="item2" width="450px">図番： __DwgNo__</td>
+                        </tr>
+                    </table>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <table class="outer2">
+        <tr>
+            <td>
+                <table class="item">
+                    <tr>
+                        <td class="item">枚数： __SheetNum__</td>
+                        <td class="item">合計： __Total__</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+	<table class="outer">
+		<tr>
+			<td class="outer">
+				<table class="inner">
+					<tr class="odd">
+						<td class="no">1</td>
+						<td class="num">__01__</td>
+					</tr>
+					<tr>
+						<td class="no">2</td>
+						<td class="num">__02__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">3</td>
+						<td class="num">__03__</td>
+
+					</tr>
+					<tr>
+						<td class="no">4</td>
+						<td class="num">__04__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">5</td>
+						<td class="num">__05__</td>
+
+					</tr>
+					<tr>
+						<td class="no">6</td>
+						<td class="num">__06__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">7</td>
+						<td class="num">__07__</td>
+
+					</tr>
+					<tr>
+						<td class="no">8</td>
+						<td class="num">__08__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">9</td>
+						<td class="num">__09__</td>
+
+					</tr>
+					<tr>
+						<td class="no">10</td>
+						<td class="num">__10__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">11</td>
+						<td class="num">__11__</td>
+
+					</tr>
+					<tr>
+						<td class="no">12</td>
+						<td class="num">__12__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">13</td>
+						<td class="num">__13__</td>
+
+					</tr>
+					<tr>
+						<td class="no">14</td>
+						<td class="num">__14__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">15</td>
+						<td class="num">__15__</td>
+
+					</tr>
+					<tr>
+						<td class="no">16</td>
+						<td class="num">__16__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">17</td>
+						<td class="num">__17__</td>
+
+					</tr>
+					<tr>
+						<td class="no">18</td>
+						<td class="num">__18__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">19</td>
+						<td class="num">__19__</td>
+
+					</tr>
+					<tr>
+						<td class="no">20</td>
+						<td class="num">__20__</td>
+
+					</tr>
+				</table>
+			</td>
+			<td class="outer">
+				<table class="inner">
+					<tr class="odd">
+						<td class="no">21</td>
+						<td class="num">__21__</td>
+
+					</tr>
+					<tr>
+						<td class="no">22</td>
+						<td class="num">__22__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">23</td>
+						<td class="num">__23__</td>
+
+					</tr>
+					<tr>
+						<td class="no">24</td>
+						<td class="num">__24__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">25</td>
+						<td class="num">__25__</td>
+
+					</tr>
+					<tr>
+						<td class="no">26</td>
+						<td class="num">__26__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">27</td>
+						<td class="num">__27__</td>
+
+					</tr>
+					<tr>
+						<td class="no">28</td>
+						<td class="num">__28__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">29</td>
+						<td class="num">__29__</td>
+
+					</tr>
+					<tr>
+						<td class="no">30</td>
+						<td class="num">__30__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">31</td>
+						<td class="num">__31__</td>
+
+					</tr>
+					<tr>
+						<td class="no">32</td>
+						<td class="num">__32__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">33</td>
+						<td class="num">__33__</td>
+
+					</tr>
+					<tr>
+						<td class="no">34</td>
+						<td class="num">__34__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">35</td>
+						<td class="num">__35__</td>
+
+					</tr>
+					<tr>
+						<td class="no">36</td>
+						<td class="num">__36__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">37</td>
+						<td class="num">__37__</td>
+
+					</tr>
+					<tr>
+						<td class="no">38</td>
+						<td class="num">__38__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">39</td>
+						<td class="num">__39__</td>
+
+					</tr>
+					<tr>
+						<td class="no">40</td>
+						<td class="num">__40__</td>
+
+					</tr>
+				</table>
+			</td>
+			<td class="outer">
+				<table class="inner">
+					<tr class="odd">
+						<td class="no">41</td>
+						<td class="num">__41__</td>
+
+					</tr>
+					<tr>
+						<td class="no">42</td>
+						<td class="num">__42__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">43</td>
+						<td class="num">__43__</td>
+
+					</tr>
+					<tr>
+						<td class="no">44</td>
+						<td class="num">__44__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">45</td>
+						<td class="num">__45__</td>
+
+					</tr>
+					<tr>
+						<td class="no">46</td>
+						<td class="num">__46__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">47</td>
+						<td class="num">__47__</td>
+
+					</tr>
+					<tr>
+						<td class="no">48</td>
+						<td class="num">__48__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">49</td>
+						<td class="num">__49__</td>
+
+					</tr>
+					<tr>
+						<td class="no">50</td>
+						<td class="num">__50__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">51</td>
+						<td class="num">__51__</td>
+
+					</tr>
+					<tr>
+						<td class="no">52</td>
+						<td class="num">__52__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">53</td>
+						<td class="num">__53__</td>
+
+					</tr>
+					<tr>
+						<td class="no">54</td>
+						<td class="num">__54__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">55</td>
+						<td class="num">__55__</td>
+
+					</tr>
+					<tr>
+						<td class="no">56</td>
+						<td class="num">__56__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">57</td>
+						<td class="num">__57__</td>
+
+					</tr>
+					<tr>
+						<td class="no">58</td>
+						<td class="num">__58__</td>
+
+					</tr>
+					<tr class="odd">
+						<td class="no">59</td>
+						<td class="num">__59__</td>
+
+					</tr>
+					<tr>
+						<td class="no">60</td>
+						<td class="num">__60__</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+</body>
+</html>

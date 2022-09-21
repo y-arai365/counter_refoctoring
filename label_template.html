@@ -1,0 +1,89 @@
+<html>
+<style type="text/css">
+  body {
+  width: 100mm;
+  height: 50mm;
+  margin: 0mm;
+  }
+
+  .left_side{
+  float: left;
+  width: 75mm;
+  }
+
+  table{
+  width:75mm;
+  height:50mm;
+  }
+
+  .right_side{
+  width: 25mm;
+  height: 50mm;
+  float: right;
+  }
+
+  td.key{
+  table-layout: fixed;
+  text-align: right;
+  float: left;
+  font-size:5px;
+  width: 10mm;
+  white-space: nowrap;
+  }
+
+  td.value{
+  text-align: center;
+  vertical-align: top;
+  font-size:12px;
+  font-weight: bold;
+  white-space: nowrap;
+  }
+
+  img{
+  border-width: 2.5mm;
+  border-style: solid;
+  border-color: #ffffff;
+  width: 20mm;
+  height: 20mm;
+  align: center;
+  }
+</style>
+
+<body>
+<div class="left_side">
+    <table>
+        <tbody>
+        <tr>
+            <td class=key>P/N:</td>
+            <td colspan=3 class=value>__ProductName__</td>
+        </tr>
+        <tr>
+            <td class=key>Lot No.:</td>
+            <td colspan=3 class=value>__LotNo__<span style="font-weight:normal;"> - </span>__SheetNo__</td>
+        </tr>
+        <tr>
+            <td class=key>QTY:</td>
+            <td colspan=3 class=value>__Quantity__</td>
+        </tr>
+        <tr>
+            <td class=key>Yield:</td>
+            <td colspan=3 class=value>__Yield__ %</td>
+        </tr>
+        <tr>
+            <td class=key>name:</td>
+            <td class=value>__Name__</td>
+            <td class=key>DATE:</td>
+            <td class=value>__Date__</td>
+        </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<div class="right_side">
+        <img src="data:image/png;base64,__Base64Image1__" alt=LotNum><br>
+        <img src="data:image/png;base64,__Base64Image2__" alt=Qty>
+
+</div>
+</body>
+</html>

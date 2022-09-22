@@ -15,7 +15,8 @@ import translate_word
 from count_contours import count_contours
 from db_manage import DatabaseManage
 from hls_range import HLSRange
-from matching_pattern import matching_pattern
+# from matching_pattern import matching_pattern
+from _matching_pattern import PatternImage
 from output_html import output_html, LabelHTMLWriter
 # from preprocessing import preprocessing
 from _preprocessing import Preprocess
@@ -268,13 +269,12 @@ class Control(object):
                 if num == 0:
                     pre = Preprocess(frame.shape[1], frame.shape[0])
                     img_rot = pre.preprocessing(frame, 500, 500)  # 射影変換などの前処理
+                    pat = PatternImage(15, self.matching_threshold)
                     # パターンマッチング
                     if matching_threshold is None:
-                        result, is_count, _, _, _, _, _ = matching_pattern(pattern_dir, img_rot,
-                                                                           self.matching_threshold, self.hls_range)
+                        result, is_count, _, _, _, _, _ = pat.get_result_and_count(img_rot, pattern_dir, self.matching_threshold, self.hls_range)
                     else:
-                        result, is_count, _, _, _, _, _ = matching_pattern(pattern_dir, img_rot,
-                                                                           matching_threshold, self.hls_range)
+                        result, is_count, _, _, _, _, _ = pat.get_result_and_count(img_rot, pattern_dir, matching_threshold, self.hls_range)
                 else:
                     binary = pickle.dumps(frame)
                     pickle_copy = pickle.loads(binary)

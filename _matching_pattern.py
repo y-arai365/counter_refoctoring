@@ -20,7 +20,7 @@ class PatternImage:
         self.kernel = np.ones((k_size, k_size), np.uint8)
         self.threshold = threshold
 
-    def get_result_and_count(self, img_rot, dir_path):
+    def get_result_and_count(self, img_rot, dir_path, _matching_threshold, _hls_range):
         """
         回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
 
@@ -222,13 +222,19 @@ if __name__ == "__main__":
     from _preprocessing import Preprocess
     import time
 
+    from hls_range import HLSRange
+
     # path_ = r"count/result/20220407/1200-1600-2/2173/上9/exp-4.jpg"
-    path_ = r"count\result\20220407\1200-1600\2008\上6-9/exp-4.jpg"
+    # path_ = r"count\result\20220407\1200-1600\2008\上6-9/exp-4.jpg"
+    path_ = r"count\result\20220906\test20220906_3\2-1\上5/exp-4.jpg"
     # dir_path_ = r"count/pattern/1200-1600-2_/"
-    dir_path_ = r"count/pattern/1200-1600/"
+    # dir_path_ = r"count/pattern/1200-1600/"
+    dir_path_ = r"count/pattern/test20220906_3/"
 
     threshold_ = 500
     min_length_ = 500
+    _matching_threshold = 0.85
+    _hls_range = HLSRange(40, 40, 40)
 
     n = np.fromfile(path_, dtype=np.uint8)
     img_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
@@ -241,7 +247,8 @@ if __name__ == "__main__":
 
     intermediate = time.time()
 
-    result_, is_count_, img_rot_, w_, h_, pattern_img, black_and_white_rect_ = pi.get_result_and_count(img_rot_, dir_path_)
+    result_, is_count_, img_rot_, w_, h_, pattern_img, black_and_white_rect_ = \
+        pi.get_result_and_count(img_rot_, dir_path_, _matching_threshold, _hls_range)
     print(is_count_)
 
     stop = time.time()

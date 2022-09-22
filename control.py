@@ -15,7 +15,8 @@ import translate_word
 from count_contours import count_contours
 from db_manage import DatabaseManage
 from hls_range import HLSRange
-from matching_pattern import matching_pattern
+# from matching_pattern import matching_pattern
+from _matching_pattern import PatternImage
 from output_html import output_html, LabelHTMLWriter
 from preprocessing import preprocessing
 from qr_code import QRCodeBase64Generator
@@ -135,7 +136,8 @@ class Control(object):
         # 初期設定のディレクトリを開いたディレクトリで上書きする
         self.iDir = os.path.dirname(filename)
         if preprocess == 1:  # 前処理をする場合
-            frame = preprocessing(frame)
+            pre = Preprocess(frame.shape[1], frame.shape[0])
+            frame = pre.preprocessing(frame, 500, 500)
         return frame
 
     def start_regi(self):
@@ -265,13 +267,12 @@ class Control(object):
                 frame = cv2.imdecode(n, cv2.IMREAD_COLOR)
                 if num == 0:
                     img_rot = preprocessing(frame)  # 射影変換などの前処理
+                    pat = PatternImage(15, self.matching_threshold)
                     # パターンマッチング
                     if matching_threshold is None:
-                        result, is_count, _, _, _, _, _ = matching_pattern(pattern_dir, img_rot,
-                                                                           self.matching_threshold, self.hls_range)
+                        result, is_count, _, _, _, _, _ = pat.get_result_and_count(img_rot, pattern_dir, self.matching_threshold, self.hls_range)
                     else:
-                        result, is_count, _, _, _, _, _ = matching_pattern(pattern_dir, img_rot,
-                                                                           matching_threshold, self.hls_range)
+                        result, is_count, _, _, _, _, _ = pat.get_result_and_count(img_rot, pattern_dir, matching_threshold, self.hls_range)
                 else:
                     binary = pickle.dumps(frame)
                     pickle_copy = pickle.loads(binary)

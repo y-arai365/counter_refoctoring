@@ -17,7 +17,8 @@ from db_manage import DatabaseManage
 from hls_range import HLSRange
 from matching_pattern import matching_pattern
 from output_html import output_html, LabelHTMLWriter
-from preprocessing import preprocessing
+# from preprocessing import preprocessing
+from _preprocessing import Preprocess
 from qr_code import QRCodeBase64Generator
 from setting_count import load_setting_file
 from write_csv import make_csv_file
@@ -135,7 +136,8 @@ class Control(object):
         # 初期設定のディレクトリを開いたディレクトリで上書きする
         self.iDir = os.path.dirname(filename)
         if preprocess == 1:  # 前処理をする場合
-            frame = preprocessing(frame)
+            pre = Preprocess(frame.shape[1], frame.shape[0])
+            frame = pre.preprocessing(frame, 500, 500)
         return frame
 
     def start_regi(self):
@@ -264,7 +266,8 @@ class Control(object):
                 n = np.fromfile(path, dtype=np.uint8)
                 frame = cv2.imdecode(n, cv2.IMREAD_COLOR)
                 if num == 0:
-                    img_rot = preprocessing(frame)  # 射影変換などの前処理
+                    pre = Preprocess(frame.shape[1], frame.shape[0])
+                    img_rot = pre.preprocessing(frame, 500, 500)  # 射影変換などの前処理
                     # パターンマッチング
                     if matching_threshold is None:
                         result, is_count, _, _, _, _, _ = matching_pattern(pattern_dir, img_rot,
@@ -472,7 +475,8 @@ class Control(object):
             n.tofile(f)  # 撮影画像の保存
         n = np.fromfile(file_name, dtype=np.uint8)
         frame = cv2.imdecode(n, cv2.IMREAD_COLOR)
-        frame2 = preprocessing(frame)  # 前処理した画像の取得
+        pre = Preprocess(frame.shape[1], frame.shape[0])
+        frame2 = pre.preprocessing(frame, 500, 500)  # 前処理した画像の取得
         if dialog is False:
             frame2 = cv2.flip(frame2, -1)  # 画像の180°回転
         os.remove(file_name)

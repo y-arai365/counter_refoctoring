@@ -15,11 +15,9 @@ import translate_word
 from count_contours import count_contours
 from db_manage import DatabaseManage
 from hls_range import HLSRange
-# from matching_pattern import matching_pattern
-from _matching_pattern import PatternImage
+from matching_pattern import PatternImage
 from output_html import output_html, LabelHTMLWriter
-# from preprocessing import preprocessing
-from _preprocessing import Preprocess
+from preprocessing import Preprocess
 from qr_code import QRCodeBase64Generator
 from setting_count import load_setting_file
 from write_csv import make_csv_file

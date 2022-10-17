@@ -21,6 +21,7 @@ from preprocessing import Preprocess
 from qr_code import QRCodeBase64Generator
 from setting_count import load_setting_file
 from write_csv import make_csv_file
+from dfk4tk import VideoCapture4DFK
 
 
 db_file = "./count/count.db"  # データベースファイルパス
@@ -83,6 +84,8 @@ class Control(object):
         self.test = False
         self.label_html_writer = LabelHTMLWriter()
         self.qr_code_generator = QRCodeBase64Generator()
+        self.cap = VideoCapture4DFK()
+        self.pre = Preprocess(self.cap.w, self.cap.h)
 
     def set_hls_range(self, h_range_width, l_range_width, s_range_width):
         """
@@ -135,8 +138,7 @@ class Control(object):
         # 初期設定のディレクトリを開いたディレクトリで上書きする
         self.iDir = os.path.dirname(filename)
         if preprocess == 1:  # 前処理をする場合
-            pre = Preprocess(frame.shape[1], frame.shape[0])
-            frame = pre.preprocessing(frame, 500, 500)
+            frame = self.pre.preprocessing(frame, 500, 500)
         return frame
 
     def start_regi(self):
@@ -265,8 +267,7 @@ class Control(object):
                 n = np.fromfile(path, dtype=np.uint8)
                 frame = cv2.imdecode(n, cv2.IMREAD_COLOR)
                 if num == 0:
-                    pre = Preprocess(frame.shape[1], frame.shape[0])
-                    img_rot = pre.preprocessing(frame, 500, 500)  # 射影変換などの前処理
+                    img_rot = self.pre.preprocessing(frame, 500, 500)  # 射影変換などの前処理
                     pat = PatternImage(15, self.matching_threshold)
                     # パターンマッチング
                     if matching_threshold is None:
@@ -473,8 +474,7 @@ class Control(object):
             n.tofile(f)  # 撮影画像の保存
         n = np.fromfile(file_name, dtype=np.uint8)
         frame = cv2.imdecode(n, cv2.IMREAD_COLOR)
-        pre = Preprocess(frame.shape[1], frame.shape[0])
-        frame2 = pre.preprocessing(frame, 500, 500)  # 前処理した画像の取得
+        frame2 = self.pre.preprocessing(frame, 500, 500)  # 前処理した画像の取得
         if dialog is False:
             frame2 = cv2.flip(frame2, -1)  # 画像の180°回転
         os.remove(file_name)

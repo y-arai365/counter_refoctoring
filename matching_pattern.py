@@ -27,6 +27,8 @@ class PatternImage:
         Args:
             img_rot (img_bgr): 回転画像
             dir_path (string): ファイルパス(ベースネーム前まで)
+            _matching_threshold (float): パターンマッチングの閾値
+            _hls_range ([int, int, int]): HLSRange
 
         Returns:
             img_bgr, int, img_bgr, int, int, img_bgr, img_th: 結果描画後の画像、計数結果、結果描画前の画像、パターン画像の幅、パターン画像の高さ、パターン画像、白矩形付き黒画像
@@ -247,7 +249,7 @@ if __name__ == "__main__":
 
     intermediate = time.time()
 
-    result_, is_count_, img_rot_, w_, h_, pattern_img, black_and_white_rect_ = \
+    result_, is_count_, img_rot_, w_, h_, pattern_img_, black_and_white_rect_ = \
         pi.get_result_and_count(img_rot_, dir_path_, _matching_threshold, _hls_range)
     print(is_count_)
 

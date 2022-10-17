@@ -7,7 +7,7 @@ from PIL import Image
 
 from perspective_transform import PerspectiveTransformer
 
-
+# TODO: パスをモジュールに直接書かない。というか、多分今後ptsを読み込むクラスを作ると思う。
 pers_num_path = "pers_num.npy"
 pts = np.load(pers_num_path)[0]
 
@@ -21,9 +21,10 @@ class Preprocess:
             width (int): オリジナル画像の幅
             height (int): オリジナル画像の高さ
         """
+        # TODO: プライベートな変数は頭にアンダースコアを
         self.perspective = PerspectiveTransformer(width, height, pts)
-        self.kernel = np.ones((3, 3), np.uint8)
-        self.max_gap = 30
+        self.kernel = np.ones((3, 3), np.uint8)  # TODO: マジックナンバー。ハードコーディングしない。
+        self.max_gap = 30  # TODO: マジックナンバー。ハードコーディングしない。
 
     def preprocessing(self, img, first_min_length, first_threshold):
         """
@@ -37,12 +38,13 @@ class Preprocess:
             img_bgr: 射影変換・回転後の画像
         """
         img_canny = self._image_pre_process(img)
-        try:
+        try:  # TODO: tryの中にたくさん書きすぎ。例外処理が必要な箇所のみtryの中に。
             # 直線を検出、そのときの閾値・最小直線距離を取得
             lines, min_length, threshold = self._detect_line(img_canny, first_min_length, first_threshold)
             if lines is None:
                 img_trans_rot = img
                 return img_trans_rot
+                # TODO: 不要なコメントアウトは消す。
                 # print("break")
                 # exit()
             deg_list = self._list_of_degree(lines)
@@ -50,26 +52,29 @@ class Preprocess:
             result_deg = self._get_result_deg(deg_list, img_canny, min_length, threshold)
             img_trans = self.perspective.transform(img)
             img_trans_rot = self._rotation(img_trans, result_deg)
+            # TODO: 不要なコメントアウトは消す。
             # return img_trans_rot
 
-        except Exception as err:
+        except Exception as err:  # TODO: Exceptionで受けない。あらゆるエラーをキャッチしちゃうので、想定外のエラーを握りつぶしてしまう
+            # TODO: import文はファイル冒頭に。
             import traceback
             import datetime
             import os
-            error_dir = "./preprocessing_error/"
+            error_dir = "./preprocessing_error/"  # TODO: ハードコーディングしない。
             os.makedirs(error_dir, exist_ok=True)
             now = datetime.datetime.now()
             str_now = "{0:%m%d_%H%M}".format(now)
             file_name = error_dir + str_now + ".txt"
+            # TODO: ???。with内でtraceback.print_excすればいいのでは？
             with open(file_name, "w") as f:
                 pass
             traceback.print_exc(file=open(file_name, "a"))
             img_trans_rot = img
-        finally:
+        finally:  # TODO: finally節は必要か？
             result = img_trans_rot
         return result
 
-    def _image_pre_process(self, image):
+    def _image_pre_process(self, image):  # TODO: imageかimgか統一してほしい。
         """
         直線検出前の事前処理
         Args:
@@ -91,7 +96,7 @@ class Preprocess:
         # 余白のエッジを抽出
         return self._canny_edge_detect(img_canny_inv)
 
-    def _detect_line(self, img_th, _min_length, _threshold):
+    def _detect_line(self, img_th, _min_length, _threshold):  # TODO: 不要なアンダースコア
         """
         二値化画像から直線を検出
 
@@ -104,25 +109,27 @@ class Preprocess:
             list(np.ndarray(X, 1, 4),) or None, int, int: 直線のリスト(右x, 右y, 左x, 左y) or None, 直線検出時の最小直線距離, 直線検出時の閾値
         """
         lines = None
-        min_length = _min_length
+        min_length = _min_length  # TODO: 恐らく不要な代入
         while min_length > 0:
-            threshold = _threshold
+            threshold = _threshold  # TODO: 恐らく不要な代入
             while threshold > 0:
-                lines = cv2.HoughLinesP(img_th, 1, np.pi / 720,  # 角度は0.5°ずつ検出
+                lines = cv2.HoughLinesP(img_th, 1, np.pi / 720,  # 角度は0.5°ずつ検出  # TODO: 0.25では？
                                         threshold=threshold, minLineLength=min_length, maxLineGap=self.max_gap)
                 if lines is not None:
                     return lines, min_length, threshold
                 else:
-                    threshold -= 50
+                    threshold -= 50  # TODO: マジックナンバー。ハードコーディングしない。
             if lines is None:
-                min_length -= 50
+                min_length -= 50  # TODO: マジックナンバー。ハードコーディングしない。
         return None, min_length, threshold
 
     def _list_of_degree(self, lines):
         """linesを基にして、傾いている角度のリスト取得"""
         deg_list = []
-        deg_list_2 = []
-        for line in lines:  # 直線がない・足りない場合
+        deg_list_2 = []  # TODO: どこにも使われてない。不要？
+
+        # TODO setなんか使えばもっと簡潔に書けそう。
+        for line in lines:  # 直線がない・足りない場合  # TODO: 要らないコメントが残ってる？
             x1, y1, x2, y2 = line[0]
             deg = self._degree(x1, y1, x2, y2)  # 角度を求める
             if deg not in deg_list:  # 角度がかぶっている場合はスルー
@@ -135,16 +142,17 @@ class Preprocess:
     def _get_result_deg(self, deg_list, img_canny, min_length, threshold):
         """角度のリストから条件に合う角度を取得"""
         result_deg = None
-        for deg in deg_list[:10]:
+        for deg in deg_list[:10]:  # TODO: マジックナンバー
             img_canny_rot = self._rotation(img_canny, deg)
             horizontal_lines, _, _ = self._detect_line(img_canny_rot, min_length, threshold)
             if horizontal_lines is not None:  # 直線が検出できた場合
                 horizontal_deg_list = []
                 for horizontal_line in horizontal_lines:
                     horizontal_deg_list = self._list_of_rounded_angles(horizontal_line, horizontal_deg_list)
-                # 正しく回転している場合は-0.5~0.5の角度以外は検出されない(?)
+                # 正しく回転している場合は-0.5~0.5の角度以外は検出されない(?)  # TODO: 0.5という値はnp.pi/720と関係が？その場合変数に置くべき。
+                # TODO: if len(horizontal_deg_list > 0 は、if horiontal_deg_list と書ける。ただし、リストの場合のみ。numpyはダメ。
                 if len(horizontal_deg_list) > 0 and np.all(np.array(horizontal_deg_list) <= 0.5) \
-                        and np.all(np.array(horizontal_deg_list) >= -0.5):
+                        and np.all(np.array(horizontal_deg_list) >= -0.5):  # TODO: -0.5 <= X <= 0.5 と書ける
                     result_deg = deg
                     break
         if result_deg is None:
@@ -154,6 +162,7 @@ class Preprocess:
     @staticmethod
     def _rotation(img, deg):
         """画像の回転"""
+        # TODO: pillowに変換して回転するよりアフィン変換の方が高速だったはず。
         img_pil = Image.fromarray(img)
         img_rot = img_pil.rotate(deg, resample=Image.BILINEAR, expand=True)
         return np.asarray(img_rot)
@@ -166,7 +175,7 @@ class Preprocess:
     @staticmethod
     def _canny_edge_detect(img):
         """キャニー検出"""
-        return cv2.Canny(img, 100, 200)
+        return cv2.Canny(img, 100, 200)  # TODO: マジックナンバー
 
     def _morphology_close(self, img_th):
         """クロージング処理"""
@@ -176,7 +185,8 @@ class Preprocess:
     def _draw_contours(img_th):
         """エッジの穴埋め"""
         img_th_copy = img_th.copy()
-        contours, hierarchy = cv2.findContours(img_th_copy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 輪郭検出
+        contours, hierarchy = cv2.findContours(img_th_copy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 輪郭検出  # TODO: 使わない返り値はアンダースコアに
+        # TODO: cv2.drawContours(img_th_copy, contours, -1, 255, -1) で一行で書けるはず。
         for cnt in contours:
             cv2.drawContours(img_th_copy, [cnt], -1, 255, -1)
         return img_th_copy
@@ -193,6 +203,7 @@ class Preprocess:
     @staticmethod
     def _degree(x1, y1, x2, y2):
         """長辺が水平になるように、回転角を決める"""
+        # TODO: 速度的に大幅に不利とかじゃなければ、わざわざmathをインポートせずにnumpyで書いちゃったほうがいいかも。
         rad = math.atan2(y1 - y2, x1 - x2)
         deg = math.degrees(rad)
         if 90 < deg:
@@ -209,14 +220,14 @@ class Preprocess:
     def _list_of_rounded_angles(self, line, deg_list):
         """小数点第2位を丸めた角度リストを作成"""
         x1, y1, x2, y2 = line[0]
-        _deg = self._degree(x1, y1, x2, y2)
-        if _deg < 0:
-            _deg_decimal = Decimal(str(_deg)).quantize(Decimal("0.1"), rounding=ROUND_DOWN)
+        _deg = self._degree(x1, y1, x2, y2)  # TODO: 不要なアンダースコア。
+        if _deg < 0:  # TODO: 場合わけが必要なのか。パッと見、必要なさそうだが。必要なら理由をコメントしておいてほしい
+            _deg_decimal = Decimal(str(_deg)).quantize(Decimal("0.1"), rounding=ROUND_DOWN)  # TODO: なぜstr(_deg)？
             _deg = float(_deg_decimal)
         else:
             _deg_decimal = Decimal(str(_deg)).quantize(Decimal("0.1"), rounding=ROUND_UP)
             _deg = float(_deg_decimal)
-        if _deg != -45.0 and _deg != 45.0:
+        if _deg != -45.0 and _deg != 45.0:  # TODO: イマイチ何をしてるのか判然としない。45, -45度以外の内重複してないものを元のリストに追加？なぜ？
             if _deg not in deg_list:
                 deg_list.append(_deg)
         return deg_list
@@ -224,9 +235,13 @@ class Preprocess:
     @staticmethod
     def _get_median(deg_list):
         """角度リストの中央値取得"""
+        # TODO: np.absで一発
         deg_abs_list = []
         for _deg in deg_list:
             deg_abs_list.append(abs(_deg))
+
+        # TODO: 可読性低し。絶対値が最も小さいものと30以上距離が離れているものは削除、ということ？
+        # TODO: deg_abs_listがnumpy.ndarrayであれば、(deg_abs_list - deg_min) > 30とすればインデックスが取得できるはず。
         # 45°付近の直線が検出されたが他の角度の直線が検出されている場合、誤りであることが多いので削除
         while True:
             # 角度の絶対値の最小と最大の差が10以上ある場合は最大を削除
@@ -251,6 +266,7 @@ class Preprocess:
 if __name__ == '__main__':
     import time
 
+    # TODO: ローカルのパスをそのままリポジトリにプッシュしないで欲しい。空文字でいいと思う。
     # path = r"count/result/20220407/1200-1600-2/2173/上9/exp-4.jpg"
     path = r"count/result/20220407/1153-00113/4002/上7-49/exp-4.jpg"
     # path = r"\\192.168.11.6\develop-data\撮影データ\個数カウントv2.3.0\180-832\下19\frame.jpg"
@@ -264,8 +280,9 @@ if __name__ == '__main__':
 
     n = np.fromfile(path, dtype=np.uint8)
     img_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
-    _height, _width = img_.shape[:2]
+    _height, _width = img_.shape[:2]  # TODO: 名前の衝突を避ける場合は「末尾」にアンダースコア
 
+    # TODO: 不要なコメントアウトは削除
     # img_th_ = np.zeros((_width, _height), dtype=np.uint8)
     # img_ = cv2.cvtColor(img_th_, cv2.COLOR_GRAY2BGR)
 

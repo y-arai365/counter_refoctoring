@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-  # TODO: python3以降不要
 """
 製品検出のみを行う
 """
@@ -17,9 +16,8 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
             k_size (int): 二値化画像をモルフォロジー変換するときのカーネル値
             threshold (float): 製品を検出するときの閾値
         """
-        # TODO: プライベートな変数は頭にアンダースコアを
-        self.kernel = np.ones((k_size, k_size), np.uint8)
-        self.threshold = threshold
+        self._kernel = np.ones((k_size, k_size), np.uint8)
+        self._threshold = threshold
 
     def get_result_and_count(self, img_rot, dir_path, _matching_threshold, _hls_range):  # TODO: 不要なアンダースコア、というか不要な引数
         """
@@ -49,23 +47,22 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         # TODO: ↑ここまでが複数あるパターン画像から適切なものを選ぶ操作。別関数にまとめたい。
 
         pattern_img = cv2.imread(provisional_pattern_path)
-        h, w = pattern_img.shape[:2]  # TODO: 「パターン画像の」幅、高さだと分かる名前がいいかも。
+        pattern_h, pattern_w = pattern_img.shape[:2]
         res = self._template_match(img_rot, pattern_img)
 
         black_back = self._get_black_back(img_rot)
-        black_back = black_back.astype(np.uint8)  # TODO: _get_black_backに含めてあげる
 
-        black_and_white_rect = self._get_black_and_white_rect(res, black_back, w, h)  # TODO: X_and_Yという名前だと中身が複数ある印象。画像ということがわかる名前に
+        img_black_back_and_white_rect = self._get_img_black_back_and_white_rect(res, black_back, pattern_w, pattern_h)
 
-        x_min, x_max, y_min, y_max = self._trim(black_and_white_rect)
+        x_min, x_max, y_min, y_max = self._trim(img_black_back_and_white_rect)
         img_rot = img_rot[y_min:y_max, x_min:x_max]
-        black_and_white_rect = black_and_white_rect[y_min:y_max, x_min:x_max]
+        img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
 
-        result_img, count_result = self._count(img_rot, black_and_white_rect)
+        result_img, count_result = self._count(img_rot, img_black_back_and_white_rect)
 
         # TODO: 恐らく現行のcontrollerなど他のコードとの兼ね合いだと思うが、返り値が多い場合一つのメソッドに多くのことをやらせすぎている可能性が高い。
         # TODO: マッチした箇所を返すクラス、結果を画像に描画するクラスなど、クラスを分けてはどうか。
-        return result_img, count_result, img_rot, w, h, pattern_img, black_and_white_rect
+        return result_img, count_result, img_rot, pattern_w, pattern_h, pattern_img, img_black_back_and_white_rect
 
     def _get_correct_pattern(self, arg):  # TODO: メソッド名と実体が合ってない。
         """
@@ -84,8 +81,7 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
         template_gray = cv2.imread(file_name, 0)
         result = cv2.matchTemplate(img_rot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
-        # TODO: 単純に閾値以上の座標の数を数えたいならnp.count_nonzero(result >= self.threshold)のほうが速そう。
-        match_count = np.where(result >= self.threshold)[0].size
+        match_count = np.count_nonzero(result >= self._threshold)
         return match_count, file_name
 
     @staticmethod
@@ -117,9 +113,10 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
             img_th: 黒画像
         """
         h, w = img_rot.shape[:2]
-        return np.zeros((h, w))
+        black_back = np.zeros((h, w))
+        return black_back.astype(np.uint8)
 
-    def _get_black_and_white_rect(self, res, black, w, h):  # TODO: X_and_Yという名前だと返り値が複数ある印象。画像ということがわかる名前に
+    def _get_img_black_back_and_white_rect(self, res, black, w, h):
         """
         resをもとにマッチングした位置を白くした黒画像を作成
 
@@ -132,7 +129,7 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         Returns:
             img_th: マッチング範囲を白い矩形に変えた黒画像
         """
-        loc = np.where(res >= self.threshold)
+        loc = np.where(res >= self._threshold)
         for pt in zip(*loc[::-1]):
             cv2.rectangle(black, pt, (pt[0] + w, pt[1] + h), 255, -1)
             black = self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
@@ -149,9 +146,9 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
             (int, int, int, int) : トリミング範囲(左上x, 右下x, 左上y, 右下y)
         """
         img_h, img_w = img_th.shape
-        img_th = cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, self.kernel)
+        img_th = cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, self._kernel)
         contours, _ = cv2.findContours(img_th, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        if len(contours) != 0:  # TODO: if len(contours) != 0 は、if contours と書ける。ただしリストの場合のみ。numpyはダメ。
+        if contours != 0:
             contour = np.vstack(contours)
             x, y, w, h = cv2.boundingRect(contour)
             x_left = x
@@ -186,20 +183,15 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         img_h, img_w = img.shape[:2]
         gray = np.ones((img_h, img_w, 3), np.uint8) * 100  # TODO: マジックナンバー
         area_threshold = self._find_threshold(contours)
-        # TODO: リスト内包表記で一行で書ける。かつ高速の場合が多い。あまり複雑すぎる内容をリスト内包表記で書くと可読性が落ちるが、これくらいは内包表記がスマート。
-        new_cons = []
-        for cnt in contours:
-            area = cv2.contourArea(cnt)
-            if area > area_threshold:
-                new_cons.append(cnt)
+        new_cons = [cnt for cnt in contours if cv2.contourArea(cnt) > area_threshold]
 
         # TODO: なぜdrawContoursが二回実行されているのか？
         gray = cv2.drawContours(gray, new_cons, -1, (30, 255, 0), -1)  # TODO: マジックナンバー。マッチ箇所を描画する色として変数に。
         gray = cv2.drawContours(gray, new_cons, -1, (30, 255, 0), 2)
-        is_count = len(new_cons)  # TODO: is_XXXという名前はboolean型を想起させる。
+        count_result = len(new_cons)
         result = cv2.addWeighted(img, 0.5, gray, 0.5, 0)
 
-        return result, is_count
+        return result, count_result
 
     @staticmethod
     def _add_gap(black, top_left, bottom_right):
@@ -241,13 +233,8 @@ if __name__ == "__main__":
 
     from hls_range import HLSRange
 
-    # TODO: ローカルのパスを書かないでほしい。
-    # path_ = r"count/result/20220407/1200-1600-2/2173/上9/exp-4.jpg"
-    # path_ = r"count\result\20220407\1200-1600\2008\上6-9/exp-4.jpg"
-    path_ = r"count\result\20220906\test20220906_3\2-1\上5/exp-4.jpg"
-    # dir_path_ = r"count/pattern/1200-1600-2_/"
-    # dir_path_ = r"count/pattern/1200-1600/"
-    dir_path_ = r"count/pattern/test20220906_3/"
+    path_ = ""
+    dir_path_ = ""
 
     threshold_ = 500
     min_length_ = 500
@@ -260,21 +247,15 @@ if __name__ == "__main__":
     pre = Preprocess(width, height)
     pi = PatternImage(k_size=15, threshold=0.85)
 
-    # TODO: Preprocessの評価はpreprocessing.pyでやればいい。
-    start = time.time()
-
     img_rot_ = pre.preprocessing(img_, min_length_, threshold_)
 
-    intermediate = time.time()
-
+    start = time.time()
     result_, is_count_, img_rot_, w_, h_, pattern_img_, black_and_white_rect_ = \
         pi.get_result_and_count(img_rot_, dir_path_, _matching_threshold, _hls_range)
     print(is_count_)
 
     stop = time.time()
     print(stop-start)
-    print(intermediate-start)
-    print(stop-intermediate)
 
     cv2.namedWindow("_rot", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("_rot", 1200, 900)

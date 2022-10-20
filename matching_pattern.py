@@ -24,8 +24,7 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
 
         Args:
-            img_rot (img_bgr): 回転画像
-            dir_path (string): ファイルパス(ベースネーム前まで)  TODO: 何のファイルパスなのか。テンプレート画像のファイル名？テンプレート画像が置いてあるフォルダ？結果の保存先？
+            img_rot (img_bgr): 回転画像            dir_path (string): パターン画像の保存先、フォルダ名
             _matching_threshold (float): パターンマッチングの閾値
             _hls_range ([int, int, int]): HLSRange
 
@@ -34,14 +33,12 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         """
         p = Pool(4)
         # TODO: パスをハードコーディングしない。
-        args = [(img_rot, dir_path, "pattern1.jpg"), (img_rot, dir_path, "pattern2.jpg"),
-                (img_rot, dir_path, "pattern3.jpg"), (img_rot, dir_path, "pattern4.jpg")]
-        count_and_pattern_path_list = p.map(self._get_correct_pattern, args)
-
-        temp_count, temp_pattern_path = max(count_and_pattern_path_list)
+        args = [(img_rot, cv2.imread(dir_path+"pattern1.jpg")), (img_rot, cv2.imread(dir_path+"pattern2.jpg")),
+                (img_rot, cv2.imread(dir_path+"pattern3.jpg")), (img_rot, cv2.imread(dir_path+"pattern4.jpg"))]
+        count_and_pattern_img_list = p.map(self._get_matching_count_and_pass_pattern_img, args)
+        _, pattern_img = max(count_and_pattern_img_list)
         # TODO: ↑ここまでが複数あるパターン画像から適切なものを選ぶ操作。別関数にまとめたい。
 
-        pattern_img = cv2.imread(temp_pattern_path)
         pattern_h, pattern_w = pattern_img.shape[:2]
         res = self._template_match(img_rot, pattern_img)
 
@@ -61,25 +58,23 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         # TODO: マッチした箇所を返すクラス、結果を画像に描画するクラスなど、クラスを分けてはどうか。
         return result_img, count_result, img_rot, pattern_w, pattern_h, pattern_img, img_black_back_and_white_rect
 
-    def _get_correct_pattern(self, arg):  # TODO: メソッド名と実体が合ってない。
+    def _get_matching_count_and_pass_pattern_img(self, arg):
         """
-        img_rotとdir_pathとtemplate_nameからできるパターン画像のテンプレートマッチングの計数結果とファイル名を返す
+        回転後画像とパターン画像のテンプレートマッチングの計数結果とファイル名を返す
         並列処理により4回処理される
 
         Args:
-            arg ([(img_bgr, string, string),]): 回転画像、ファイルパス、ファイル名  TODO: 何のファイルパス、ファイル名なのか。ファイルパスというと "XXX.txt" みたいなファイルそのものを想起させるので、フォルダ名とかがいいかも。
-                                                                                  TODO: というか、ファイルパスじゃなく画像そのものを渡すようにしてはどうか。
+            arg ([(img_bgr, img_bgr),]): 回転後画像、パターン画像
 
         Returns:
-            int, string: カウント数(1つのパターン画像にいくつも矩形が表示されるので実際の製品数ではない)、各パターン画像のファイル名
+            int, img_bgr: カウント数(1つのパターン画像にいくつも矩形が表示されるので実際の製品数ではない)、パターン画像
         """
-        img_rot, dir_path, template_name = arg
-        file_name = dir_path + template_name
+        img_rot, pattern_img = arg
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
-        template_gray = cv2.imread(file_name, 0)
-        result = cv2.matchTemplate(img_rot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
+        pattern_img_gray = cv2.cvtColor(pattern_img, cv2.COLOR_BGR2GRAY)
+        result = cv2.matchTemplate(img_rot_gray, pattern_img_gray, cv2.TM_CCOEFF_NORMED)
         match_count = np.count_nonzero(result >= self._threshold)
-        return match_count, file_name
+        return match_count, pattern_img
 
     @staticmethod
     def _template_match(img_rot, pattern):

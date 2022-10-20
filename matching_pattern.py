@@ -213,12 +213,8 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         Returns:
             int: 製品検出時の閾値
         """
-        # TODO: 最大値はmaxがシンプル
-        max_area = 0
-        for cnt in contours:
-            area = cv2.contourArea(cnt)
-            if area > max_area:
-                max_area = area
+        area_list = [cv2.contourArea(cnt) for cnt in contours]
+        max_area = max(area_list)
         return int(max_area / 5)
 
 

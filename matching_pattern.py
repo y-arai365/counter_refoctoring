@@ -53,7 +53,9 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         img_rot = img_rot[y_min:y_max, x_min:x_max]
         img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
 
-        result_img, count_result = self._count(img_rot, img_black_back_and_white_rect)
+        new_cons = self._get_contours(img_black_back_and_white_rect)
+        count_result = len(new_cons)
+        result_img = self._draw_contours(img_rot, new_cons)
 
         # TODO: 恐らく現行のcontrollerなど他のコードとの兼ね合いだと思うが、返り値が多い場合一つのメソッドに多くのことをやらせすぎている可能性が高い。
         # TODO: マッチした箇所を返すクラス、結果を画像に描画するクラスなど、クラスを分けてはどうか。
@@ -163,30 +165,40 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
             y_max = img_h
         return x_min, x_max, y_min, y_max
 
-    def _count(self, img, black):  # TODO: 内容とメソッド名が一致してない。また、一定の面積以上の輪郭の抽出・輪郭の描画、とできるだけ二つのことを一つの関数でやらないように。
+    def _get_contours(self, black):
         """
-        白矩形付き黒画像から輪郭を取得して、閾値以上のものを検出した輪郭としてimgに描画
+        白矩形付き黒画像から一定の閾値(面積)以上の輪郭を取得
+
         Args:
-            img (img_bgr): 回転画像
             black (img_th): 白矩形付き黒画像
 
         Returns:
-            img_bgr, int: 検出位置を緑の矩形で描画して示した画像、カウントできた製品の数
+            list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]: 一定の閾値以上の輪郭のリスト
         """
         contours, _ = cv2.findContours(black, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        img_h, img_w = img.shape[:2]
-        gray = np.ones((img_h, img_w, 3), np.uint8) * 100  # TODO: マジックナンバー
         area_threshold = self._find_threshold(contours)
         new_cons = [cnt for cnt in contours if cv2.contourArea(cnt) > area_threshold]
+        return new_cons
 
+    @staticmethod
+    def _draw_contours(img, new_cons):
+        """
+        輪郭リストを基に回転画像に検出位置を描画
+
+        Args:
+            img (img_bgr): 回転画像
+            new_cons (list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]): 輪郭のリスト
+
+        Returns:
+            img_bgr: 検出位置を緑の矩形で描画して示した画像
+        """
+        img_h, img_w = img.shape[:2]
+        gray = np.ones((img_h, img_w, 3), np.uint8) * 100  # TODO: マジックナンバー
         # TODO: なぜdrawContoursが二回実行されているのか？
         gray = cv2.drawContours(gray, new_cons, -1, (30, 255, 0), -1)  # TODO: マジックナンバー。マッチ箇所を描画する色として変数に。
         gray = cv2.drawContours(gray, new_cons, -1, (30, 255, 0), 2)
-        count_result = len(new_cons)
         result = cv2.addWeighted(img, 0.5, gray, 0.5, 0)
-
-        return result, count_result
+        return result
 
     @staticmethod
     def _add_gap(black, top_left, bottom_right):
@@ -208,7 +220,7 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         黒画像内で面積が最大の白領域の1/5を製品検出時の閾値にする
 
         Args:
-            contours (list[np.ndarray(shape=(x, 4, 1, 1), dtype=np.int32),]: 輪郭のリスト
+            contours (list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]): 輪郭のリスト
 
         Returns:
             int: 製品検出時の閾値

@@ -38,15 +38,10 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
                 (img_rot, dir_path, "pattern3.jpg"), (img_rot, dir_path, "pattern4.jpg")]
         count_and_pattern_path_list = p.map(self._get_correct_pattern, args)
 
-        provisional_count, provisional_pattern_path = 0, None  # TODO: provisionalより、一時的という意味で "temp_XXX" "tmp_XXX"という命名が一般的かも。やたらめったら"temp"と命名するな、という説もあり。
-                                                               # TODO: 文字列が入るならNoneより空文字がいいかも。
-        # TODO: 最大値を取り出すのであればmaxでいい。
-        for count, pattern_path in count_and_pattern_path_list:
-            if count > provisional_count:
-                provisional_count, provisional_pattern_path = count, pattern_path
+        temp_count, temp_pattern_path = max(count_and_pattern_path_list)
         # TODO: ↑ここまでが複数あるパターン画像から適切なものを選ぶ操作。別関数にまとめたい。
 
-        pattern_img = cv2.imread(provisional_pattern_path)
+        pattern_img = cv2.imread(temp_pattern_path)
         pattern_h, pattern_w = pattern_img.shape[:2]
         res = self._template_match(img_rot, pattern_img)
 

@@ -24,7 +24,8 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
 
         Args:
-            img_rot (img_bgr): 回転画像            dir_path (string): パターン画像の保存先、フォルダ名
+            img_rot (img_bgr): 回転画像
+            dir_path (string): パターン画像の保存先、フォルダ名
             _matching_threshold (float): パターンマッチングの閾値
             _hls_range ([int, int, int]): HLSRange
 

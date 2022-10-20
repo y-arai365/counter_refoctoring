@@ -49,7 +49,7 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
 
         img_black_back_and_white_rect = self._get_img_black_back_and_white_rect(res, black_back, pattern_w, pattern_h)
 
-        x_min, x_max, y_min, y_max = self._trim(img_black_back_and_white_rect)
+        x_min, x_max, y_min, y_max = self._get_trim_coordinates(img_black_back_and_white_rect)
         img_rot = img_rot[y_min:y_max, x_min:x_max]
         img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
 
@@ -130,7 +130,7 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
             black = self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
         return black
 
-    def _trim(self, img_th):
+    def _get_trim_coordinates(self, img_th):
         """
         白矩形付き黒画像から白矩形全体を囲うような範囲を取得し、そこから前後左右200pxずつ広げた点を取得する
 
@@ -161,7 +161,7 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
             y_min = 0
             x_max = img_w
             y_max = img_h
-        return x_min, x_max, y_min, y_max  # TODO: trimという名前のメソッドに画像を渡したら、切り取られた画像が返ってきそう。
+        return x_min, x_max, y_min, y_max
 
     def _count(self, img, black):  # TODO: 内容とメソッド名が一致してない。また、一定の面積以上の輪郭の抽出・輪郭の描画、とできるだけ二つのことを一つの関数でやらないように。
         """

@@ -19,6 +19,14 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         self._kernel = np.ones((k_size, k_size), np.uint8)
         self._threshold = threshold
 
+        self._pattern_1_file_name = "pattern1.jpg"
+        self._pattern_2_file_name = "pattern2.jpg"
+        self._pattern_3_file_name = "pattern3.jpg"
+        self._pattern_4_file_name = "pattern4.jpg"
+        self._margin_of_matching_range = 200
+        self._threshold_of_matching_cover = 100
+        self._color_drawing_match_result = (30, 255, 0)
+
     def get_result_and_count(self, img_rot, dir_path):
         """
         回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
@@ -61,12 +69,18 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
             img_bgr: マッチングに使うパターン画像
         """
         p = Pool(4)
-        # TODO: パスをハードコーディングしない。
-        args = [(img_rot, cv2.imread(dir_path+"pattern1.jpg")), (img_rot, cv2.imread(dir_path+"pattern2.jpg")),
-                (img_rot, cv2.imread(dir_path+"pattern3.jpg")), (img_rot, cv2.imread(dir_path+"pattern4.jpg"))]
+        args = [(img_rot, self._get_pattern_image(dir_path + self._pattern_1_file_name)),
+                (img_rot, self._get_pattern_image(dir_path + self._pattern_2_file_name)),
+                (img_rot, self._get_pattern_image(dir_path + self._pattern_3_file_name)),
+                (img_rot, self._get_pattern_image(dir_path + self._pattern_4_file_name))]
         count_and_pattern_img_list = p.map(self._get_matching_count_and_pass_pattern_img, args)
         _, pattern_img = max(count_and_pattern_img_list)
         return pattern_img
+
+    @staticmethod
+    def _get_pattern_image(file_name):
+        """パターン画像の取得"""
+        return cv2.imread(file_name)
 
     def _get_matching_count_and_pass_pattern_img(self, arg):
         """
@@ -158,11 +172,10 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
             y_top = y
             y_bottom = y + h
 
-            # TODO: マジックナンバー
-            x_min = max(x_left - 200, 0)
-            y_min = max(y_top - 200, 0)
-            x_max = min(x_right + 200, img_w)
-            y_max = min(y_bottom + 200, img_h)
+            x_min = max(x_left - self._margin_of_matching_range, 0)
+            y_min = max(y_top - self._margin_of_matching_range, 0)
+            x_max = min(x_right + self._margin_of_matching_range, img_w)
+            y_max = min(y_bottom + self._margin_of_matching_range, img_h)
         else:  # 輪郭の取得ができなかったとき
             x_min = 0
             y_min = 0
@@ -185,8 +198,7 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         new_cons = [cnt for cnt in contours if cv2.contourArea(cnt) > area_threshold]
         return new_cons
 
-    @staticmethod
-    def _draw_contours(img, new_cons):
+    def _draw_contours(self, img, new_cons):
         """
         輪郭リストを基に回転画像に検出位置を描画
 
@@ -198,10 +210,10 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
             img_bgr: 検出位置を緑の矩形で描画して示した画像
         """
         img_h, img_w = img.shape[:2]
-        gray = np.ones((img_h, img_w, 3), np.uint8) * 100  # TODO: マジックナンバー
+        gray = np.ones((img_h, img_w, 3), np.uint8) * self._threshold_of_matching_cover
         # TODO: なぜdrawContoursが二回実行されているのか？
-        gray = cv2.drawContours(gray, new_cons, -1, (30, 255, 0), -1)  # TODO: マジックナンバー。マッチ箇所を描画する色として変数に。
-        gray = cv2.drawContours(gray, new_cons, -1, (30, 255, 0), 2)
+        gray = cv2.drawContours(gray, new_cons, -1, self._color_drawing_match_result, -1)
+        gray = cv2.drawContours(gray, new_cons, -1, self._color_drawing_match_result, 2)
         result = cv2.addWeighted(img, 0.5, gray, 0.5, 0)
         return result
 

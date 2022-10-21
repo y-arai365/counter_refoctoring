@@ -270,10 +270,7 @@ class Control(object):
                     img_rot = self.pre.preprocessing(frame, 500, 500)  # 射影変換などの前処理
                     pat = PatternImage(15, self.matching_threshold)
                     # パターンマッチング
-                    if matching_threshold is None:
-                        result, is_count, _, _, _, _, _ = pat.get_result_and_count(img_rot, pattern_dir, self.matching_threshold, self.hls_range)
-                    else:
-                        result, is_count, _, _, _, _, _ = pat.get_result_and_count(img_rot, pattern_dir, matching_threshold, self.hls_range)
+                    result, is_count = pat.get_result_and_count(img_rot, pattern_dir)
                 else:
                     binary = pickle.dumps(frame)
                     pickle_copy = pickle.loads(binary)

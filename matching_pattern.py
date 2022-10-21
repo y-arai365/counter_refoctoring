@@ -19,15 +19,13 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         self._kernel = np.ones((k_size, k_size), np.uint8)
         self._threshold = threshold
 
-    def get_result_and_count(self, img_rot, dir_path, _matching_threshold, _hls_range):  # TODO: 不要なアンダースコア、というか不要な引数
+    def get_result_and_count(self, img_rot, dir_path):
         """
         回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
 
         Args:
             img_rot (img_bgr): 回転画像
             dir_path (string): パターン画像の保存先、フォルダ名
-            _matching_threshold (float): パターンマッチングの閾値
-            _hls_range ([int, int, int]): HLSRange
 
         Returns:
             img_bgr, int, img_bgr, int, int, img_bgr, img_th: 結果描画後の画像、計数結果、結果描画前の画像、パターン画像の幅、パターン画像の高さ、パターン画像、白矩形付き黒画像
@@ -48,9 +46,8 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         count_result = len(new_cons)
         result_img = self._draw_contours(img_rot, new_cons)
 
-        # TODO: 恐らく現行のcontrollerなど他のコードとの兼ね合いだと思うが、返り値が多い場合一つのメソッドに多くのことをやらせすぎている可能性が高い。
         # TODO: マッチした箇所を返すクラス、結果を画像に描画するクラスなど、クラスを分けてはどうか。
-        return result_img, count_result, img_rot, pattern_w, pattern_h, pattern_img, img_black_back_and_white_rect
+        return result_img, count_result
 
     def _choose_suitable_pattern_img(self, img_rot, dir_path):
         """
@@ -261,8 +258,7 @@ if __name__ == "__main__":
     img_rot_ = pre.preprocessing(img_, min_length_, threshold_)
 
     start = time.time()
-    result_, is_count_, img_rot_, w_, h_, pattern_img_, black_and_white_rect_ = \
-        pi.get_result_and_count(img_rot_, dir_path_, _matching_threshold, _hls_range)
+    result_, is_count_ = pi.get_result_and_count(img_rot_, dir_path_)
     print(is_count_)
 
     stop = time.time()

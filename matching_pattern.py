@@ -32,14 +32,7 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         Returns:
             img_bgr, int, img_bgr, int, int, img_bgr, img_th: 結果描画後の画像、計数結果、結果描画前の画像、パターン画像の幅、パターン画像の高さ、パターン画像、白矩形付き黒画像
         """
-        p = Pool(4)
-        # TODO: パスをハードコーディングしない。
-        args = [(img_rot, cv2.imread(dir_path+"pattern1.jpg")), (img_rot, cv2.imread(dir_path+"pattern2.jpg")),
-                (img_rot, cv2.imread(dir_path+"pattern3.jpg")), (img_rot, cv2.imread(dir_path+"pattern4.jpg"))]
-        count_and_pattern_img_list = p.map(self._get_matching_count_and_pass_pattern_img, args)
-        _, pattern_img = max(count_and_pattern_img_list)
-        # TODO: ↑ここまでが複数あるパターン画像から適切なものを選ぶ操作。別関数にまとめたい。
-
+        pattern_img = self._choose_suitable_pattern_img(img_rot, dir_path)
         pattern_h, pattern_w = pattern_img.shape[:2]
         res = self._template_match(img_rot, pattern_img)
 
@@ -58,6 +51,25 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         # TODO: 恐らく現行のcontrollerなど他のコードとの兼ね合いだと思うが、返り値が多い場合一つのメソッドに多くのことをやらせすぎている可能性が高い。
         # TODO: マッチした箇所を返すクラス、結果を画像に描画するクラスなど、クラスを分けてはどうか。
         return result_img, count_result, img_rot, pattern_w, pattern_h, pattern_img, img_black_back_and_white_rect
+
+    def _choose_suitable_pattern_img(self, img_rot, dir_path):
+        """
+        複数あるパターン画像から適切なものを選ぶ
+
+        Args:
+            img_rot (img_bgr): 回転画像
+            dir_path (string): パターン画像の保存先、フォルダ名
+
+        Returns:
+            img_bgr: マッチングに使うパターン画像
+        """
+        p = Pool(4)
+        # TODO: パスをハードコーディングしない。
+        args = [(img_rot, cv2.imread(dir_path+"pattern1.jpg")), (img_rot, cv2.imread(dir_path+"pattern2.jpg")),
+                (img_rot, cv2.imread(dir_path+"pattern3.jpg")), (img_rot, cv2.imread(dir_path+"pattern4.jpg"))]
+        count_and_pattern_img_list = p.map(self._get_matching_count_and_pass_pattern_img, args)
+        _, pattern_img = max(count_and_pattern_img_list)
+        return pattern_img
 
     def _get_matching_count_and_pass_pattern_img(self, arg):
         """

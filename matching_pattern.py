@@ -103,8 +103,7 @@ class MatchingResult:
     @staticmethod
     def _template_match(img_rot, pattern):
         """
-        BGR画像2枚を使ってテンプレートマッチング
-        TODO: グレースケールでなくてもmatchTemplateに渡せる。もしあえてグレースケールにしているならその理由を書いておくと、なぜわざわざグレースケールに？と考えなくて済む。
+        BGR画像2枚を使ってテンプレートマッチング、グレースケールの方が検出しやすいため変換
 
         Args:
             img_rot (img_bgr): 全体画像

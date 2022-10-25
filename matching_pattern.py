@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 
-class PatternImage:  # TODO: クラス名が実態と合ってないように感じる
+class MatchingResult:
     def __init__(self, k_size, threshold):
         """
         回転した画像をパターン画像でテンプレートマッチングするクラス、検出場所に色を付けて返す
@@ -211,9 +211,7 @@ class PatternImage:  # TODO: クラス名が実態と合ってないように感
         """
         img_h, img_w = img.shape[:2]
         gray = np.ones((img_h, img_w, 3), np.uint8) * self._threshold_of_matching_cover
-        # TODO: なぜdrawContoursが二回実行されているのか？
         gray = cv2.drawContours(gray, new_cons, -1, self._color_drawing_match_result, -1)
-        gray = cv2.drawContours(gray, new_cons, -1, self._color_drawing_match_result, 2)
         result = cv2.addWeighted(img, 0.5, gray, 0.5, 0)
         return result
 
@@ -265,12 +263,12 @@ if __name__ == "__main__":
     img_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
     height, width = img_.shape[:2]
     pre = Preprocess(width, height)
-    pi = PatternImage(k_size=15, threshold=0.85)
+    mr = MatchingResult(k_size=15, threshold=0.85)
 
     img_rot_ = pre.preprocessing(img_, min_length_, threshold_)
 
     start = time.time()
-    result_, is_count_ = pi.get_result_and_count(img_rot_, dir_path_)
+    result_, is_count_ = mr.get_result_and_count(img_rot_, dir_path_)
     print(is_count_)
 
     stop = time.time()

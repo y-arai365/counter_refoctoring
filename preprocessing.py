@@ -36,7 +36,7 @@ class Preprocess:
         Returns:
             img_bgr: 射影変換・回転後の画像
         """
-        img_canny = self._image_pre_process(img)
+        img_canny = self._img_pre_process(img)
         try:  # TODO: tryの中にたくさん書きすぎ。例外処理が必要な箇所のみtryの中に。
             # 直線を検出、そのときの閾値・最小直線距離を取得
             lines, min_length, threshold = self._detect_line(img_canny, first_min_length, first_threshold)
@@ -68,17 +68,17 @@ class Preprocess:
             result = img_trans_rot
         return result
 
-    def _image_pre_process(self, image):  # TODO: imageかimgか統一してほしい。
+    def _img_pre_process(self, img):
         """
         直線検出前の事前処理
         Args:
-            image (img_bgr): オリジナル画像
+            img (img_bgr): オリジナル画像
 
         Returns:
             img_th: 製品の輪郭を表示した二値化画像
         """
         # 画像を2値化してエッジ検出する
-        img_gray = self._gray_scale(image)
+        img_gray = self._gray_scale(img)
         img_canny = self._canny_edge_detect(img_gray)  # エッジ検出
         img_pers = self.perspective.transform(img_canny)  # 射影変換
         img_close = self._morphology_close(img_pers)
@@ -105,7 +105,7 @@ class Preprocess:
         lines = None
         while min_length > 0:
             while threshold > 0:
-                lines = cv2.HoughLinesP(img_th, 1, np.pi / 720,  # 角度は0.25°ずつ検出
+                lines = cv2.HoughLinesP(img_th, 1, np.pi / 720,  # 角度は0.5°ずつ検出  # TODO: 0.25では？
                                         threshold=threshold, minLineLength=min_length, maxLineGap=self._max_gap)
                 if lines is not None:
                     return lines, min_length, threshold
@@ -138,9 +138,7 @@ class Preprocess:
                 for horizontal_line in horizontal_lines:
                     horizontal_deg_list = self._list_of_rounded_angles(horizontal_line, horizontal_deg_list)
                 # 正しく回転している場合は-0.5~0.5の角度以外は検出されない(?)  # TODO: 0.5という値はnp.pi/720と関係が？その場合変数に置くべき。
-                # TODO: if len(horizontal_deg_list > 0 は、if horiontal_deg_list と書ける。ただし、リストの場合のみ。numpyはダメ。
-                if len(horizontal_deg_list) > 0 and np.all(np.array(horizontal_deg_list) <= 0.5) \
-                        and np.all(np.array(horizontal_deg_list) >= -0.5):  # TODO: -0.5 <= X <= 0.5 と書ける
+                if len(horizontal_deg_list) and -0.5 <= np.all(np.array(horizontal_deg_list) <= 0.5):
                     result_deg = deg
                     break
         if result_deg is None:
@@ -174,9 +172,7 @@ class Preprocess:
         """エッジの穴埋め"""
         img_th_copy = img_th.copy()
         contours, hierarchy = cv2.findContours(img_th_copy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 輪郭検出  # TODO: 使わない返り値はアンダースコアに
-        # TODO: cv2.drawContours(img_th_copy, contours, -1, 255, -1) で一行で書けるはず。
-        for cnt in contours:
-            cv2.drawContours(img_th_copy, [cnt], -1, 255, -1)
+        cv2.drawContours(img_th_copy, contours, -1, 255, -1)
         return img_th_copy
 
     @staticmethod
@@ -210,10 +206,10 @@ class Preprocess:
         x1, y1, x2, y2 = line[0]
         deg = self._degree(x1, y1, x2, y2)
         if deg < 0:  # TODO: 場合わけが必要なのか。パッと見、必要なさそうだが。必要なら理由をコメントしておいてほしい
-            deg_decimal = Decimal(str(deg)).quantize(Decimal("0.1"), rounding=ROUND_DOWN)  # TODO: なぜstr(deg)？
+            deg_decimal = Decimal(deg).quantize(Decimal("0.1"), rounding=ROUND_DOWN)
             deg = float(deg_decimal)
         else:
-            deg_decimal = Decimal(str(deg)).quantize(Decimal("0.1"), rounding=ROUND_UP)
+            deg_decimal = Decimal(deg).quantize(Decimal("0.1"), rounding=ROUND_UP)
             deg = float(deg_decimal)
         if deg != -45.0 and deg != 45.0:  # TODO: イマイチ何をしてるのか判然としない。45, -45度以外の内重複してないものを元のリストに追加？なぜ？
             if deg not in deg_list:
@@ -223,10 +219,7 @@ class Preprocess:
     @staticmethod
     def _get_median(deg_list):
         """角度リストの中央値取得"""
-        # TODO: np.absで一発
-        deg_abs_list = []
-        for _deg in deg_list:
-            deg_abs_list.append(abs(_deg))
+        deg_abs_list = np.abs(deg_list)
 
         # TODO: 可読性低し。絶対値が最も小さいものと30以上距離が離れているものは削除、ということ？
         # TODO: deg_abs_listがnumpy.ndarrayであれば、(deg_abs_list - deg_min) > 30とすればインデックスが取得できるはず。

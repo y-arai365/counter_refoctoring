@@ -21,10 +21,9 @@ class Preprocess:
             width (int): オリジナル画像の幅
             height (int): オリジナル画像の高さ
         """
-        # TODO: プライベートな変数は頭にアンダースコアを
         self.perspective = PerspectiveTransformer(width, height, pts)
-        self.kernel = np.ones((3, 3), np.uint8)  # TODO: マジックナンバー。ハードコーディングしない。
-        self.max_gap = 30  # TODO: マジックナンバー。ハードコーディングしない。
+        self._kernel = np.ones((3, 3), np.uint8)  # TODO: マジックナンバー。ハードコーディングしない。
+        self._max_gap = 30  # TODO: マジックナンバー。ハードコーディングしない。
 
     def preprocessing(self, img, first_min_length, first_threshold):
         """
@@ -44,16 +43,11 @@ class Preprocess:
             if lines is None:
                 img_trans_rot = img
                 return img_trans_rot
-                # TODO: 不要なコメントアウトは消す。
-                # print("break")
-                # exit()
             deg_list = self._list_of_degree(lines)
 
             result_deg = self._get_result_deg(deg_list, img_canny, min_length, threshold)
             img_trans = self.perspective.transform(img)
             img_trans_rot = self._rotation(img_trans, result_deg)
-            # TODO: 不要なコメントアウトは消す。
-            # return img_trans_rot
 
         except Exception as err:  # TODO: Exceptionで受けない。あらゆるエラーをキャッチしちゃうので、想定外のエラーを握りつぶしてしまう
             # TODO: import文はファイル冒頭に。
@@ -96,25 +90,23 @@ class Preprocess:
         # 余白のエッジを抽出
         return self._canny_edge_detect(img_canny_inv)
 
-    def _detect_line(self, img_th, _min_length, _threshold):  # TODO: 不要なアンダースコア
+    def _detect_line(self, img_th, min_length, threshold):
         """
         二値化画像から直線を検出
 
         Args:
             img_th (img_th): 製品の輪郭を表示した二値化画像
-            _min_length (int): 直線検出するときの最小直線距離
-            _threshold (int): 直線検出するときの閾値
+            min_length (int): 直線検出するときの最小直線距離
+            threshold (int): 直線検出するときの閾値
 
         Returns:
             list(np.ndarray(X, 1, 4),) or None, int, int: 直線のリスト(右x, 右y, 左x, 左y) or None, 直線検出時の最小直線距離, 直線検出時の閾値
         """
         lines = None
-        min_length = _min_length  # TODO: 恐らく不要な代入
         while min_length > 0:
-            threshold = _threshold  # TODO: 恐らく不要な代入
             while threshold > 0:
-                lines = cv2.HoughLinesP(img_th, 1, np.pi / 720,  # 角度は0.5°ずつ検出  # TODO: 0.25では？
-                                        threshold=threshold, minLineLength=min_length, maxLineGap=self.max_gap)
+                lines = cv2.HoughLinesP(img_th, 1, np.pi / 720,  # 角度は0.25°ずつ検出
+                                        threshold=threshold, minLineLength=min_length, maxLineGap=self._max_gap)
                 if lines is not None:
                     return lines, min_length, threshold
                 else:
@@ -126,17 +118,13 @@ class Preprocess:
     def _list_of_degree(self, lines):
         """linesを基にして、傾いている角度のリスト取得"""
         deg_list = []
-        deg_list_2 = []  # TODO: どこにも使われてない。不要？
 
         # TODO setなんか使えばもっと簡潔に書けそう。
-        for line in lines:  # 直線がない・足りない場合  # TODO: 要らないコメントが残ってる？
+        for line in lines:
             x1, y1, x2, y2 = line[0]
             deg = self._degree(x1, y1, x2, y2)  # 角度を求める
             if deg not in deg_list:  # 角度がかぶっている場合はスルー
                 deg_list.append(deg)
-                deg_list_2.append(deg)
-            else:
-                deg_list_2.append(deg)
         return deg_list
 
     def _get_result_deg(self, deg_list, img_canny, min_length, threshold):
@@ -179,7 +167,7 @@ class Preprocess:
 
     def _morphology_close(self, img_th):
         """クロージング処理"""
-        return cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, self.kernel)
+        return cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, self._kernel)
 
     @staticmethod
     def _draw_contours(img_th):
@@ -198,7 +186,7 @@ class Preprocess:
 
     def _erode(self, img_th):
         """エロード処理"""
-        return cv2.erode(img_th, self.kernel, iterations=1)
+        return cv2.erode(img_th, self._kernel, iterations=1)
 
     @staticmethod
     def _degree(x1, y1, x2, y2):
@@ -220,16 +208,16 @@ class Preprocess:
     def _list_of_rounded_angles(self, line, deg_list):
         """小数点第2位を丸めた角度リストを作成"""
         x1, y1, x2, y2 = line[0]
-        _deg = self._degree(x1, y1, x2, y2)  # TODO: 不要なアンダースコア。
-        if _deg < 0:  # TODO: 場合わけが必要なのか。パッと見、必要なさそうだが。必要なら理由をコメントしておいてほしい
-            _deg_decimal = Decimal(str(_deg)).quantize(Decimal("0.1"), rounding=ROUND_DOWN)  # TODO: なぜstr(_deg)？
-            _deg = float(_deg_decimal)
+        deg = self._degree(x1, y1, x2, y2)
+        if deg < 0:  # TODO: 場合わけが必要なのか。パッと見、必要なさそうだが。必要なら理由をコメントしておいてほしい
+            deg_decimal = Decimal(str(deg)).quantize(Decimal("0.1"), rounding=ROUND_DOWN)  # TODO: なぜstr(deg)？
+            deg = float(deg_decimal)
         else:
-            _deg_decimal = Decimal(str(_deg)).quantize(Decimal("0.1"), rounding=ROUND_UP)
-            _deg = float(_deg_decimal)
-        if _deg != -45.0 and _deg != 45.0:  # TODO: イマイチ何をしてるのか判然としない。45, -45度以外の内重複してないものを元のリストに追加？なぜ？
-            if _deg not in deg_list:
-                deg_list.append(_deg)
+            deg_decimal = Decimal(str(deg)).quantize(Decimal("0.1"), rounding=ROUND_UP)
+            deg = float(deg_decimal)
+        if deg != -45.0 and deg != 45.0:  # TODO: イマイチ何をしてるのか判然としない。45, -45度以外の内重複してないものを元のリストに追加？なぜ？
+            if deg not in deg_list:
+                deg_list.append(deg)
         return deg_list
 
     @staticmethod
@@ -266,10 +254,7 @@ class Preprocess:
 if __name__ == '__main__':
     import time
 
-    # TODO: ローカルのパスをそのままリポジトリにプッシュしないで欲しい。空文字でいいと思う。
-    # path = r"count/result/20220407/1200-1600-2/2173/上9/exp-4.jpg"
-    path = r"count/result/20220407/1153-00113/4002/上7-49/exp-4.jpg"
-    # path = r"\\192.168.11.6\develop-data\撮影データ\個数カウントv2.3.0\180-832\下19\frame.jpg"
+    path = ""
 
     pers_num_path = "pers_num.npy"
     pts = np.load(pers_num_path)[0]
@@ -280,25 +265,18 @@ if __name__ == '__main__':
 
     n = np.fromfile(path, dtype=np.uint8)
     img_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
-    _height, _width = img_.shape[:2]  # TODO: 名前の衝突を避ける場合は「末尾」にアンダースコア
+    height_, width_ = img_.shape[:2]
 
-    # TODO: 不要なコメントアウトは削除
-    # img_th_ = np.zeros((_width, _height), dtype=np.uint8)
-    # img_ = cv2.cvtColor(img_th_, cv2.COLOR_GRAY2BGR)
-
-    pre = Preprocess(_width, _height)
-    pers = PerspectiveTransformer(_width, _height, pts)
+    pre = Preprocess(width_, height_)
+    pers = PerspectiveTransformer(width_, height_, pts)
 
     start = time.time()
     img_trans_rot_ = pre.preprocessing(img_, min_length_, threshold_)
     stop = time.time()
     print(stop-start)
 
-    cv2.namedWindow("i2", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("i2", 1200, 900)
-    cv2.imshow("i2", img_trans_rot_)
-    cv2.namedWindow("i3", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("i3", 1200, 900)
-    cv2.imshow("i3", img_)
+    cv2.namedWindow("img", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("img", 1200, 900)
+    cv2.imshow("img", img_trans_rot_)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

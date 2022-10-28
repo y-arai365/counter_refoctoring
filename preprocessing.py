@@ -110,7 +110,7 @@ class Preprocess:
         lines = None
         while min_length > 0:
             while threshold > 0:
-                lines = cv2.HoughLinesP(img_th, 1, np.pi / 720,  # 角度は0.5°ずつ検出  # TODO: 0.25では？
+                lines = cv2.HoughLinesP(img_th, 1, np.pi / 720,  # 角度は0.25°ずつ検出
                                         threshold=threshold, minLineLength=min_length, maxLineGap=self._max_gap)
                 if lines is not None:
                     return lines, min_length, threshold
@@ -175,7 +175,7 @@ class Preprocess:
     def _draw_contours(img_th):
         """エッジの穴埋め"""
         img_th_copy = img_th.copy()
-        contours, hierarchy = cv2.findContours(img_th_copy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 輪郭検出  # TODO: 使わない返り値はアンダースコアに
+        contours, _ = cv2.findContours(img_th_copy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 輪郭検出
         cv2.drawContours(img_th_copy, contours, -1, 255, -1)
         return img_th_copy
 

@@ -42,36 +42,16 @@ class Preprocess:
             img_bgr: 射影変換・回転後の画像
         """
         img_canny = self._img_pre_process(img)
-        try:  # TODO: tryの中にたくさん書きすぎ。例外処理が必要な箇所のみtryの中に。
-            # 直線を検出、そのときの閾値・最小直線距離を取得
-            lines, min_length, threshold = self._detect_line(img_canny, first_min_length, first_threshold)
-            if lines is None:
-                img_trans_rot = img
-                return img_trans_rot
-            deg_list = self._list_of_degree(lines)
-
-            result_deg = self._get_result_deg(deg_list, img_canny, min_length, threshold)
-            img_trans = self.perspective.transform(img)
-            img_trans_rot = self._rotation(img_trans, result_deg)
-
-        except Exception as err:  # TODO: Exceptionで受けない。あらゆるエラーをキャッチしちゃうので、想定外のエラーを握りつぶしてしまう
-            # TODO: import文はファイル冒頭に。
-            import traceback
-            import datetime
-            import os
-            error_dir = self._error_dir
-            os.makedirs(error_dir, exist_ok=True)
-            now = datetime.datetime.now()
-            str_now = "{0:%m%d_%H%M}".format(now)
-            file_name = error_dir + str_now + ".txt"
-            # TODO: ???。with内でtraceback.print_excすればいいのでは？
-            with open(file_name, "w") as f:
-                pass
-            traceback.print_exc(file=open(file_name, "a"))
+        # 直線を検出、そのときの閾値・最小直線距離を取得
+        lines, min_length, threshold = self._detect_line(img_canny, first_min_length, first_threshold)
+        if lines is None:  # 画像に製品が無い等で直線が検出されないとき
             img_trans_rot = img
-        finally:  # TODO: finally節は必要か？
-            result = img_trans_rot
-        return result
+            return img_trans_rot
+        deg_list = self._list_of_degree(lines)
+        result_deg = self._get_result_deg(deg_list, img_canny, min_length, threshold)
+        img_trans = self.perspective.transform(img)
+        img_trans_rot = self._rotation(img_trans, result_deg)
+        return img_trans_rot
 
     def _img_pre_process(self, img):
         """

@@ -133,10 +133,18 @@ class Preprocess:
     @staticmethod
     def _rotation(img, deg):
         """画像の回転"""
-        # TODO: pillowに変換して回転するよりアフィン変換の方が高速だったはず。
-        img_pil = Image.fromarray(img)
-        img_rot = img_pil.rotate(deg, resample=Image.BILINEAR, expand=True)
-        return np.asarray(img_rot)
+        deg_rad = deg/180*np.pi
+        h, w = img.shape[:2]
+        # 回転後の画像サイズを計算
+        w_rot = int(np.round(h * np.absolute(np.sin(deg_rad)) + w * np.absolute(np.cos(deg_rad))))
+        h_rot = int(np.round(h * np.absolute(np.cos(deg_rad)) + w * np.absolute(np.sin(deg_rad))))
+        # 回転
+        rotation_matrix = cv2.getRotationMatrix2D((w / 2, h / 2), deg, 1)
+        # 平行移動(rotation + translation)
+        affine_matrix = rotation_matrix.copy()
+        affine_matrix[0][2] = affine_matrix[0][2] - w / 2 + w_rot / 2
+        affine_matrix[1][2] = affine_matrix[1][2] - h / 2 + h_rot / 2
+        return cv2.warpAffine(img, affine_matrix, (w_rot, h_rot), flags=cv2.INTER_CUBIC)
 
     @staticmethod
     def _gray_scale(img):

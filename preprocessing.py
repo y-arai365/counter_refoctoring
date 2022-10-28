@@ -23,6 +23,12 @@ class Preprocess:
         self.perspective = PerspectiveTransformer(width, height, pts)
         self._kernel = np.ones((3, 3), np.uint8)  # TODO: マジックナンバー。ハードコーディングしない。
         self._max_gap = 30  # TODO: マジックナンバー。ハードコーディングしない。
+        self._error_dir = "./preprocessing_error/"
+        self._threshold_decrease_value = 50
+        self._min_length_decrease_value = 50
+        self._number_to_take_from_list = 10
+        self._canny_threshold_1 = 100
+        self._canny_threshold_2 = 200
 
     def preprocessing(self, img, first_min_length, first_threshold):
         """
@@ -53,7 +59,7 @@ class Preprocess:
             import traceback
             import datetime
             import os
-            error_dir = "./preprocessing_error/"  # TODO: ハードコーディングしない。
+            error_dir = self._error_dir
             os.makedirs(error_dir, exist_ok=True)
             now = datetime.datetime.now()
             str_now = "{0:%m%d_%H%M}".format(now)
@@ -109,9 +115,9 @@ class Preprocess:
                 if lines is not None:
                     return lines, min_length, threshold
                 else:
-                    threshold -= 50  # TODO: マジックナンバー。ハードコーディングしない。
+                    threshold -= self._threshold_decrease_value
             if lines is None:
-                min_length -= 50  # TODO: マジックナンバー。ハードコーディングしない。
+                min_length -= self._min_length_decrease_value
         return None, min_length, threshold
 
     def _list_of_degree(self, lines):
@@ -129,7 +135,7 @@ class Preprocess:
     def _get_result_deg(self, deg_list, img_canny, min_length, threshold):
         """角度のリストから条件に合う角度を取得"""
         result_deg = None
-        for deg in deg_list[:10]:  # TODO: マジックナンバー
+        for deg in deg_list[:self._number_to_take_from_list]:
             img_canny_rot = self._rotation(img_canny, deg)
             horizontal_lines, _, _ = self._detect_line(img_canny_rot, min_length, threshold)
             if horizontal_lines is not None:  # 直線が検出できた場合
@@ -157,10 +163,9 @@ class Preprocess:
         """グレースケール"""
         return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    @staticmethod
-    def _canny_edge_detect(img):
+    def _canny_edge_detect(self, img):
         """キャニー検出"""
-        return cv2.Canny(img, 100, 200)  # TODO: マジックナンバー
+        return cv2.Canny(img, self._canny_threshold_1, self._canny_threshold_2)
 
     def _morphology_close(self, img_th):
         """クロージング処理"""

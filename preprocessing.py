@@ -1,5 +1,4 @@
 from decimal import Decimal, ROUND_DOWN, ROUND_UP
-import math
 
 import cv2
 import numpy as np
@@ -187,9 +186,18 @@ class Preprocess:
     @staticmethod
     def _degree(x1, y1, x2, y2):
         """長辺が水平になるように、回転角を決める"""
-        # TODO: 速度的に大幅に不利とかじゃなければ、わざわざmathをインポートせずにnumpyで書いちゃったほうがいいかも。
-        rad = math.atan2(y1 - y2, x1 - x2)
-        deg = math.degrees(rad)
+        a, b = np.array([x1, y1]), np.array([x2, y2])
+        vec = b - a
+        rad = np.arctan2(vec[0], vec[1])
+        deg = np.rad2deg(rad)
+
+        # これがないと長辺を水平にするための角度範囲が-45～-135(or45~135)になる、math.atan2のときの角度に合わせている
+        deg = deg + 90
+        if deg > 180:
+            deg -= 360
+        if 0 < deg < 180:
+            deg = -deg
+
         if 90 < deg:
             deg -= 180
         if deg < -90:

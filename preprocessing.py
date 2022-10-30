@@ -203,12 +203,10 @@ class Preprocess:
         """小数点第2位を丸めた角度リストを作成"""
         x1, y1, x2, y2 = line[0]
         deg = self._degree(x1, y1, x2, y2)
-        if deg < 0:  # TODO: 場合わけが必要なのか。パッと見、必要なさそうだが。必要なら理由をコメントしておいてほしい
-            deg_decimal = Decimal(deg).quantize(Decimal("0.1"), rounding=ROUND_DOWN)
-            deg = float(deg_decimal)
-        else:
-            deg_decimal = Decimal(deg).quantize(Decimal("0.1"), rounding=ROUND_UP)
-            deg = float(deg_decimal)
+        deg_decimal = Decimal(deg).quantize(Decimal("0.1"), rounding=ROUND_DOWN)
+        deg = float(deg_decimal)
+        deg_list.append(deg)
+        print(deg_list)
         if deg != -45.0 and deg != 45.0:  # TODO: イマイチ何をしてるのか判然としない。45, -45度以外の内重複してないものを元のリストに追加？なぜ？
             if deg not in deg_list:
                 deg_list.append(deg)

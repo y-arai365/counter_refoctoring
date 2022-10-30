@@ -216,28 +216,12 @@ class Preprocess:
     def _get_median(deg_list):
         """角度リストの中央値取得"""
         deg_abs_list = np.abs(deg_list)
-
-        # TODO: 可読性低し。絶対値が最も小さいものと30以上距離が離れているものは削除、ということ？
-        # TODO: deg_abs_listがnumpy.ndarrayであれば、(deg_abs_list - deg_min) > 30とすればインデックスが取得できるはず。
-        # 45°付近の直線が検出されたが他の角度の直線が検出されている場合、誤りであることが多いので削除
-        while True:
-            # 角度の絶対値の最小と最大の差が10以上ある場合は最大を削除
-            deg_min = np.min(deg_abs_list)
-            deg_max = np.max(deg_abs_list)
-            if deg_max - deg_min > 30:
-                _deg_list = []
-                _deg_abs_list = []
-                for deg in deg_list:  # 最大の角度がいくつか存在する可能性があるので新しいリストを作成
-                    if abs(deg) != deg_max:
-                        _deg_list.append(deg)
-                for deg in deg_abs_list:
-                    if deg != deg_max:
-                        _deg_abs_list.append(deg)
-                deg_list = _deg_list
-                deg_abs_list = _deg_abs_list
-            else:
-                break
-        return np.median(deg_list)
+        deg_abs_min = np.min(deg_abs_list)
+        new_deg_list = []
+        for index, boolean in enumerate((deg_abs_list - deg_abs_min) < 30):  # 角度の絶対値の最小より30以上離れている角度は削除
+            if boolean:
+                new_deg_list.append(deg_list[index])
+        return np.median(new_deg_list)
 
 
 if __name__ == '__main__':

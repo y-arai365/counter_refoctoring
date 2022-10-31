@@ -74,7 +74,10 @@ class MatchingResult:
                 (img_rot, self._get_pattern_image(dir_path + self._pattern_3_file_name)),
                 (img_rot, self._get_pattern_image(dir_path + self._pattern_4_file_name))]
         count_and_pattern_img_list = p.map(self._get_matching_count_and_pass_pattern_img, args)
-        _, pattern_img = max(count_and_pattern_img_list)
+        count_list = [count_and_pattern_img[0] for count_and_pattern_img in count_and_pattern_img_list]
+        max_value = max(count_list)
+        max_index = count_list.index(max_value)
+        pattern_img = count_and_pattern_img_list[max_index][1]
         return pattern_img
 
     @staticmethod

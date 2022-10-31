@@ -5,9 +5,11 @@ import numpy as np
 
 from perspective_transform import PerspectiveTransformer
 
-# TODO: パスをモジュールに直接書かない。というか、多分今後ptsを読み込むクラスを作ると思う。
-pers_num_path = "pers_num.npy"
-pts = np.load(pers_num_path)[0]
+
+class LoadPerspectiveNumFile:
+    def __init__(self):
+        self.pers_num_path = "pers_num.npy"
+        self.pts = np.load(self.pers_num_path)[0]
 
 
 class Preprocess:
@@ -19,7 +21,9 @@ class Preprocess:
             width (int): オリジナル画像の幅
             height (int): オリジナル画像の高さ
         """
-        self.perspective = PerspectiveTransformer(width, height, pts)
+        self.load_pers_num_file = LoadPerspectiveNumFile()
+        self.perspective = PerspectiveTransformer(width, height, self.load_pers_num_file.pts)
+
         self._kernel = np.ones((3, 3), np.uint8)  # TODO: マジックナンバー。ハードコーディングしない。
         self._max_gap = 30  # TODO: マジックナンバー。ハードコーディングしない。
         self._error_dir = "./preprocessing_error/"
@@ -227,9 +231,6 @@ if __name__ == '__main__':
 
     path = ""
 
-    pers_num_path = "pers_num.npy"
-    pts = np.load(pers_num_path)[0]
-
     threshold_ = 500
     min_length_ = 500
     max_gap_ = 30
@@ -238,8 +239,9 @@ if __name__ == '__main__':
     img_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
     height_, width_ = img_.shape[:2]
 
+    load = LoadPerspectiveNumFile()
     pre = Preprocess(width_, height_)
-    pers = PerspectiveTransformer(width_, height_, pts)
+    pers = PerspectiveTransformer(width_, height_, load.pts)
 
     start = time.time()
     img_trans_rot_ = pre.preprocessing(img_, min_length_, threshold_)

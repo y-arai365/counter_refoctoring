@@ -1,8 +1,7 @@
-from decimal import Decimal, ROUND_DOWN, ROUND_UP
+from decimal import Decimal, ROUND_DOWN
 
 import cv2
 import numpy as np
-from PIL import Image
 
 from perspective_transform import PerspectiveTransformer
 
@@ -119,7 +118,7 @@ class Preprocess:
                 horizontal_deg_list = []
                 for horizontal_line in horizontal_lines:
                     horizontal_deg_list = self._list_of_rounded_angles(horizontal_line, horizontal_deg_list)
-                # 正しく回転している場合は-0.5~0.5の角度以外は検出されない(?)  # TODO: 0.5という値はnp.pi/720と関係が？その場合変数に置くべき。
+                # 正しく回転している場合は-0.5°~0.5°の角度以外は検出されない(?)
                 if len(horizontal_deg_list) and -0.5 <= np.all(np.array(horizontal_deg_list) <= 0.5):
                     result_deg = deg
                     break
@@ -206,8 +205,7 @@ class Preprocess:
         deg_decimal = Decimal(deg).quantize(Decimal("0.1"), rounding=ROUND_DOWN)
         deg = float(deg_decimal)
         deg_list.append(deg)
-        print(deg_list)
-        if deg != -45.0 and deg != 45.0:  # TODO: イマイチ何をしてるのか判然としない。45, -45度以外の内重複してないものを元のリストに追加？なぜ？
+        if deg != -45.0 and deg != 45.0:
             if deg not in deg_list:
                 deg_list.append(deg)
         return deg_list

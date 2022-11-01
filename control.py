@@ -15,7 +15,7 @@ import translate_word
 from count_contours import count_contours
 from db_manage import DatabaseManage
 from hls_range import HLSRange
-from matching_pattern import MatchingResult
+from matching_pattern import Matching, ResultImage
 from output_html import output_html, LabelHTMLWriter
 from preprocessing import Preprocess
 from qr_code import QRCodeBase64Generator
@@ -268,9 +268,11 @@ class Control(object):
                 frame = cv2.imdecode(n, cv2.IMREAD_COLOR)
                 if num == 0:
                     img_rot = self.pre.preprocessing(frame, 500, 500)  # 射影変換などの前処理
-                    match = MatchingResult(15, self.matching_threshold)
+                    match = Matching(self.matching_threshold)
+                    res_img = ResultImage(15, self.matching_threshold)
                     # パターンマッチング
-                    result, is_count = match.get_result_and_count(img_rot, pattern_dir)
+                    res, pattern_img = match.get_res(img_rot, pattern_dir)
+                    result, is_count = res_img.get_result_img_and_count_result(img_rot, res, pattern_img)
                 else:
                     binary = pickle.dumps(frame)
                     pickle_copy = pickle.loads(binary)

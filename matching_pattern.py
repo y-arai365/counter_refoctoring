@@ -7,27 +7,23 @@ import cv2
 import numpy as np
 
 
-class MatchingResult:
-    def __init__(self, k_size, threshold):
+class Matching:
+    def __init__(self, threshold):
         """
-        回転した画像をパターン画像でテンプレートマッチングするクラス、検出場所に色を付けて返す
-
+        回転した画像とパターン画像をマッチングするクラス
         Args:
-            k_size (int): 二値化画像をモルフォロジー変換するときのカーネル値
             threshold (float): 製品を検出するときの閾値
         """
-        self._kernel = np.ones((k_size, k_size), np.uint8)
-        self._threshold = threshold
+        self.threshold = threshold
 
         self._pattern_1_file_name = "pattern1.jpg"
         self._pattern_2_file_name = "pattern2.jpg"
         self._pattern_3_file_name = "pattern3.jpg"
         self._pattern_4_file_name = "pattern4.jpg"
-        self._margin_of_matching_range = 200
-        self._threshold_of_matching_cover = 100
-        self._color_drawing_match_result = (30, 255, 0)
 
-    def get_result_and_count(self, img_rot, dir_path):
+        self.pattern_img = None
+
+    def get_res(self, img_rot, dir_path):
         """
         回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
 
@@ -36,26 +32,10 @@ class MatchingResult:
             dir_path (string): パターン画像の保存先、フォルダ名
 
         Returns:
-            img_bgr, int, img_bgr, int, int, img_bgr, img_th: 結果描画後の画像、計数結果、結果描画前の画像、パターン画像の幅、パターン画像の高さ、パターン画像、白矩形付き黒画像
+            img_th, img_bgr: マッチング結果画像、パターン画像
         """
         pattern_img = self._choose_suitable_pattern_img(img_rot, dir_path)
-        pattern_h, pattern_w = pattern_img.shape[:2]
-        res = self._template_match(img_rot, pattern_img)
-
-        black_back = self._get_black_back(img_rot)
-
-        img_black_back_and_white_rect = self._get_img_black_back_and_white_rect(res, black_back, pattern_w, pattern_h)
-
-        x_min, x_max, y_min, y_max = self._get_trim_coordinates(img_black_back_and_white_rect)
-        img_rot = img_rot[y_min:y_max, x_min:x_max]
-        img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
-
-        new_cons = self._get_contours(img_black_back_and_white_rect)
-        count_result = len(new_cons)
-        result_img = self._draw_contours(img_rot, new_cons)
-
-        # TODO: マッチした箇所を返すクラス、結果を画像に描画するクラスなど、クラスを分けてはどうか。
-        return result_img, count_result
+        return self._template_match(img_rot, pattern_img), pattern_img
 
     def _choose_suitable_pattern_img(self, img_rot, dir_path):
         """
@@ -100,7 +80,7 @@ class MatchingResult:
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
         pattern_img_gray = cv2.cvtColor(pattern_img, cv2.COLOR_BGR2GRAY)
         result = cv2.matchTemplate(img_rot_gray, pattern_img_gray, cv2.TM_CCOEFF_NORMED)
-        match_count = np.count_nonzero(result >= self._threshold)
+        match_count = np.count_nonzero(result >= self.threshold)
         return match_count, pattern_img
 
     @staticmethod
@@ -118,6 +98,47 @@ class MatchingResult:
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
         pattern_gray = cv2.cvtColor(pattern, cv2.COLOR_BGR2GRAY)
         return cv2.matchTemplate(img_rot_gray, pattern_gray, cv2.TM_CCOEFF_NORMED)
+
+
+class ResultImage:
+    def __init__(self, k_size, threshold):
+        """
+        マッチングの結果を画像に描画するクラス
+
+        Args:
+            k_size (int): 二値化画像をモルフォロジー変換するときのカーネル値
+            threshold (float): 製品を検出するときの閾値
+        """
+        self.threshold = threshold
+
+        self._kernel = np.ones((k_size, k_size), np.uint8)
+
+        self._margin_of_matching_range = 200
+        self._threshold_of_matching_cover = 100
+        self._color_drawing_match_result = (30, 255, 0)
+
+    def get_result_img_and_count_result(self, img_rot, res, pattern_img):
+        """
+        回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
+
+        Args:
+            img_rot (img_bgr): 回転画像
+            res (img_th): マッチング結果画像
+            pattern_img (img_bgr): パターン画像
+
+        Returns:
+            img_bgr, int: 結果描画後の画像、計数結果
+        """
+        pattern_h, pattern_w = pattern_img.shape[:2]
+        black_back = self._get_black_back(img_rot)
+        img_black_back_and_white_rect = self._get_img_black_back_and_white_rect(res, black_back, pattern_w, pattern_h)
+        x_min, x_max, y_min, y_max = self._get_trim_coordinates(img_black_back_and_white_rect)
+        img_rot = img_rot[y_min:y_max, x_min:x_max]
+        img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
+        new_cons = self._get_contours(img_black_back_and_white_rect)
+        count_result = len(new_cons)
+        result_img = self._draw_contours(img_rot, new_cons)
+        return result_img, count_result
 
     @staticmethod
     def _get_black_back(img_rot):
@@ -147,7 +168,7 @@ class MatchingResult:
         Returns:
             img_th: マッチング範囲を白い矩形に変えた黒画像
         """
-        loc = np.where(res >= self._threshold)
+        loc = np.where(res >= self.threshold)
         for pt in zip(*loc[::-1]):
             cv2.rectangle(black, pt, (pt[0] + w, pt[1] + h), 255, -1)
             black = self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
@@ -251,26 +272,29 @@ if __name__ == "__main__":
     from preprocessing import Preprocess
     import time
 
-    from hls_range import HLSRange
-
-    path_ = ""
-    dir_path_ = ""
+    path_ = r"count/result/20220407/1200-1600-2/2173/上9/exp-4.jpg"
+    # path_ = r"count\result\20220407\1200-1600\2008\上6-9/exp-4.jpg"
+    # path_ = r"count\result\20220906\test20220906_3\2-1\上5/exp-4.jpg"
+    dir_path_ = r"count/pattern/1200-1600-2_/"
+    # dir_path_ = r"count/pattern/1200-1600/"
+    # dir_path_ = r"count/pattern/test20220906_3/"
 
     threshold_ = 500
     min_length_ = 500
-    _matching_threshold = 0.85
-    _hls_range = HLSRange(40, 40, 40)
+    matching_threshold_ = 0.85
 
     n = np.fromfile(path_, dtype=np.uint8)
     img_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
     height, width = img_.shape[:2]
     pre = Preprocess(width, height)
-    mr = MatchingResult(k_size=15, threshold=0.85)
+    match_ = Matching(threshold=matching_threshold_)
+    res_img_ = ResultImage(k_size=15, threshold=matching_threshold_)
 
     img_rot_ = pre.preprocessing(img_, min_length_, threshold_)
 
     start = time.time()
-    result_, is_count_ = mr.get_result_and_count(img_rot_, dir_path_)
+    res_, pattern_img_ = match_.get_res(img_rot_, dir_path_)
+    result_, is_count_ = res_img_.get_result_img_and_count_result(img_rot_, res_, pattern_img_)
     print(is_count_)
 
     stop = time.time()

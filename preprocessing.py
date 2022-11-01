@@ -13,7 +13,9 @@ class LoadPerspectiveNumFile:
 
 
 class Preprocess:
-    def __init__(self, width, height):
+    def __init__(self, width, height, k_size=3, max_gap=30, error_dir="./preprocessing_error/",
+                 threshold_decrease_value=50, min_length_decrease_value=50, number_to_take_from_list=10,
+                 canny_threshold_1=100, canny_threshold_2=200):
         """
         画像を射影変換、画像内の製品が水平になるように回転するクラス
 
@@ -24,14 +26,14 @@ class Preprocess:
         self.load_pers_num_file = LoadPerspectiveNumFile()
         self.perspective = PerspectiveTransformer(width, height, self.load_pers_num_file.pts)
 
-        self._kernel = np.ones((3, 3), np.uint8)  # TODO: マジックナンバー。ハードコーディングしない。
-        self._max_gap = 30  # TODO: マジックナンバー。ハードコーディングしない。
-        self._error_dir = "./preprocessing_error/"
-        self._threshold_decrease_value = 50
-        self._min_length_decrease_value = 50
-        self._number_to_take_from_list = 10
-        self._canny_threshold_1 = 100
-        self._canny_threshold_2 = 200
+        self._kernel = np.ones((k_size, k_size), np.uint8)
+        self._max_gap = max_gap
+        self._error_dir = error_dir
+        self._threshold_decrease_value = threshold_decrease_value
+        self._min_length_decrease_value = min_length_decrease_value
+        self._number_to_take_from_list = number_to_take_from_list
+        self._canny_threshold_1 = canny_threshold_1
+        self._canny_threshold_2 = canny_threshold_2
 
     def preprocessing(self, img, first_min_length, first_threshold):
         """

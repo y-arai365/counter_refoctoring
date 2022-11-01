@@ -101,7 +101,8 @@ class Matching:
 
 
 class ResultImage:
-    def __init__(self, k_size, threshold):
+    def __init__(self, k_size, threshold, margin_of_matching_range=200,
+                 threshold_of_matching_cover=100, color_drawing_match_result=(30, 255, 0)):
         """
         マッチングの結果を画像に描画するクラス
 
@@ -113,9 +114,9 @@ class ResultImage:
 
         self._kernel = np.ones((k_size, k_size), np.uint8)
 
-        self._margin_of_matching_range = 200
-        self._threshold_of_matching_cover = 100
-        self._color_drawing_match_result = (30, 255, 0)
+        self._margin_of_matching_range = margin_of_matching_range
+        self._threshold_of_matching_cover = threshold_of_matching_cover
+        self._color_drawing_match_result = color_drawing_match_result
 
     def get_result_img_and_count_result(self, img_rot, res, pattern_img):
         """
@@ -272,12 +273,8 @@ if __name__ == "__main__":
     from preprocessing import Preprocess
     import time
 
-    path_ = r"count/result/20220407/1200-1600-2/2173/上9/exp-4.jpg"
-    # path_ = r"count\result\20220407\1200-1600\2008\上6-9/exp-4.jpg"
-    # path_ = r"count\result\20220906\test20220906_3\2-1\上5/exp-4.jpg"
-    dir_path_ = r"count/pattern/1200-1600-2_/"
-    # dir_path_ = r"count/pattern/1200-1600/"
-    # dir_path_ = r"count/pattern/test20220906_3/"
+    path_ = ""
+    dir_path_ = ""
 
     threshold_ = 500
     min_length_ = 500

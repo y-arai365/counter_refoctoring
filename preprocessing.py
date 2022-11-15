@@ -125,7 +125,7 @@ class Preprocess:
                 for horizontal_line in horizontal_lines:
                     horizontal_deg_list = self._list_of_rounded_angles(horizontal_line, horizontal_deg_list)
                 # 正しく回転している場合は-0.5°~0.5°の角度以外は検出されない(?)
-                if len(horizontal_deg_list) and -0.5 <= np.all(np.array(horizontal_deg_list) <= 0.5):
+                if len(horizontal_deg_list) and -0.5 <= np.all(np.array(horizontal_deg_list)) <= 0.5:
                     result_deg = deg
                     break
         if result_deg is None:

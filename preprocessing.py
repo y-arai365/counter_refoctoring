@@ -139,10 +139,9 @@ class Preprocess:
         # 回転
         rotation_matrix = cv2.getRotationMatrix2D((w / 2, h / 2), deg, 1)
         # 平行移動(rotation + translation)
-        affine_matrix = rotation_matrix.copy()  # TODO: コピーする必要なし。
-        affine_matrix[0][2] = affine_matrix[0][2] - w / 2 + w_rot / 2  # TODO: affine_matrix[0][2] += ...　とか書ける。
-        affine_matrix[1][2] = affine_matrix[1][2] - h / 2 + h_rot / 2
-        return cv2.warpAffine(img, affine_matrix, (w_rot, h_rot), flags=cv2.INTER_CUBIC)
+        rotation_matrix[0][2] = rotation_matrix[0][2] - w / 2 + w_rot / 2  # TODO: rotation_matrix[0][2] += ...　とか書ける。
+        rotation_matrix[1][2] = rotation_matrix[1][2] - h / 2 + h_rot / 2
+        return cv2.warpAffine(img, rotation_matrix, (w_rot, h_rot), flags=cv2.INTER_CUBIC)
 
     @staticmethod
     def _gray_scale(img):
@@ -160,10 +159,9 @@ class Preprocess:
     @staticmethod
     def _draw_contours(img_th):
         """エッジの穴埋め"""
-        img_th_copy = img_th.copy()  # TODO: img_thを汚さず残しておきたい、とかじゃなきゃコピーする必要なさそう。
-        contours, _ = cv2.findContours(img_th_copy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 輪郭検出
-        cv2.drawContours(img_th_copy, contours, -1, 255, -1)
-        return img_th_copy
+        contours, _ = cv2.findContours(img_th, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 輪郭検出
+        cv2.drawContours(img_th, contours, -1, 255, -1)
+        return img_th
 
     @staticmethod
     def _invert(img_th):

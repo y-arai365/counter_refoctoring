@@ -8,10 +8,11 @@ from perspective_transform import PerspectiveTransformer
 
 class LoadPerspectiveNumFile:
     def __init__(self):
-        self.pers_num_path = "pers_num.npy"
+        self.pers_num_path = "pers_num.npy"  # TODO: パスを外から渡す形に
         self.pts = np.load(self.pers_num_path)[0]
 
 
+# TODO: エッジの取得、回転、と二つに分けてはどうか。射影変換クラス・エッジ取得クラス・回転クラス、とそれらを持つ前処理クラス、とか。
 class Preprocess:
     def __init__(self, width, height, k_size=3, max_gap=30, error_dir="./preprocessing_error/",
                  threshold_decrease_value=50, min_length_decrease_value=50, number_to_take_from_list=10,
@@ -23,12 +24,13 @@ class Preprocess:
             width (int): オリジナル画像の幅
             height (int): オリジナル画像の高さ
         """
+        # TODO: プライベートな変数は頭にアンダースコア
         self.load_pers_num_file = LoadPerspectiveNumFile()
         self.perspective = PerspectiveTransformer(width, height, self.load_pers_num_file.pts)
 
         self._kernel = np.ones((k_size, k_size), np.uint8)
         self._max_gap = max_gap
-        self._error_dir = error_dir
+        self._error_dir = error_dir  # TODO: 使ってない？
         self._threshold_decrease_value = threshold_decrease_value
         self._min_length_decrease_value = min_length_decrease_value
         self._number_to_take_from_list = number_to_take_from_list
@@ -107,6 +109,7 @@ class Preprocess:
 
     def _list_of_degree(self, lines):
         """linesを基にして、傾いている角度のリスト取得"""
+        # TODO: set内包表記でfor文使わずに書ける。速いかどうかは知らないけど。
         deg_list = []
         for line in lines:
             x1, y1, x2, y2 = line[0]
@@ -123,8 +126,19 @@ class Preprocess:
             if horizontal_lines is not None:  # 直線が検出できた場合
                 horizontal_deg_list = []
                 for horizontal_line in horizontal_lines:
+                    # TODO: _list_of_rounded_anglesにはhorizontal_lineだけ渡して角度を返すようにして、
+                    #  horizontal_deg_list = リスト内包表記、で同じだと思う。リストを渡してそれが上書きされていくのはなんか気持ち悪い。
                     horizontal_deg_list = self._list_of_rounded_angles(horizontal_line, horizontal_deg_list)
                 # 正しく回転している場合は-0.5°~0.5°の角度以外は検出されない(?)
+                # TODO: if len(horizontal_deg_list) and ... -> if horizontal_deg_list and ...
+                # TODO: -0.5 <= X <= 0.5と書ける、と書いてしまったが、それはXがint, floatなんかの場合のみ。Xが配列の場合無理。
+                #  np.all(arr)はarrの要素全てがTrueならTrue、一つでもFalse(0)があればFalseを返すので、
+                #  この場合horizontal_deg_listに0が一つでもあれば、np.all(np.array(horizontal_deg_list))はFalse(=0)になり
+                #  -0.5 <= np.all(np.array(horizontal_deg_list)) <= 0.5がTrueになってしまう。
+                #  なので、正しくは元のやつのように
+                #  np.all(-0.5 <= np.array(horizontal_deg_list)) and np.all(np.array(horizontal_deg_list) <= 0.5)
+                #  もしくは、ちょっと賢くやるなら
+                #  np.all(np.abs(horizontal_deg_list) <= 0.5)
                 if len(horizontal_deg_list) and -0.5 <= np.all(np.array(horizontal_deg_list)) <= 0.5:
                     result_deg = deg
                     break
@@ -135,7 +149,7 @@ class Preprocess:
     @staticmethod
     def _rotation(img, deg):
         """画像の回転"""
-        deg_rad = deg/180*np.pi
+        deg_rad = deg/180*np.pi  # TODO: degreeなのかradianなのか
         h, w = img.shape[:2]
         # 回転後の画像サイズを計算
         w_rot = int(np.round(h * np.absolute(np.sin(deg_rad)) + w * np.absolute(np.cos(deg_rad))))
@@ -143,8 +157,8 @@ class Preprocess:
         # 回転
         rotation_matrix = cv2.getRotationMatrix2D((w / 2, h / 2), deg, 1)
         # 平行移動(rotation + translation)
-        affine_matrix = rotation_matrix.copy()
-        affine_matrix[0][2] = affine_matrix[0][2] - w / 2 + w_rot / 2
+        affine_matrix = rotation_matrix.copy()  # TODO: コピーする必要なし。
+        affine_matrix[0][2] = affine_matrix[0][2] - w / 2 + w_rot / 2  # TODO: affine_matrix[0][2] += ...　とか書ける。
         affine_matrix[1][2] = affine_matrix[1][2] - h / 2 + h_rot / 2
         return cv2.warpAffine(img, affine_matrix, (w_rot, h_rot), flags=cv2.INTER_CUBIC)
 
@@ -164,7 +178,7 @@ class Preprocess:
     @staticmethod
     def _draw_contours(img_th):
         """エッジの穴埋め"""
-        img_th_copy = img_th.copy()
+        img_th_copy = img_th.copy()  # TODO: img_thを汚さず残しておきたい、とかじゃなきゃコピーする必要なさそう。
         contours, _ = cv2.findContours(img_th_copy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)  # 輪郭検出
         cv2.drawContours(img_th_copy, contours, -1, 255, -1)
         return img_th_copy
@@ -186,7 +200,7 @@ class Preprocess:
         rad = np.arctan2(vec[0], vec[1])
         deg = np.rad2deg(rad)
 
-        # これがないと長辺を水平にするための角度範囲が-45～-135(or45~135)になる、math.atan2のときの角度に合わせている
+        # これがないと長辺を水平にするための角度範囲が-45～-135(or45~135)になる、math.atan2のときの角度に合わせている  TODO: math -> np
         deg = deg + 90
         if deg > 180:
             deg -= 360
@@ -221,6 +235,17 @@ class Preprocess:
         """角度リストの中央値取得"""
         deg_abs_list = np.abs(deg_list)
         deg_abs_min = np.min(deg_abs_list)
+
+        # TODO: (deg_abs_list - deg_abs_min) < 30 で [False, False, True, False, True, ...]みたいなarrayが得られるので、
+        #  あとはdeg_listに渡せば欲しいものだけ抽出できる。良く使うので覚えておきましょう。
+        #  例:
+        #   >>> a = np.array([1, 2, 3, 4, 5, 6])
+        #   >>> odds = a % 2 == 0
+        #   >>> odds
+        #   array([False,  True, False,  True, False,  True])
+        #   >>> a[odds]
+        #   array([2, 4, 6])
+
         new_deg_list = []
         for index, boolean in enumerate((deg_abs_list - deg_abs_min) < 30):  # 角度の絶対値の最小より30以上離れている角度は削除
             if boolean:

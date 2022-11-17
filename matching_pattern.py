@@ -21,9 +21,10 @@ class Matching:
         self._pattern_3_file_name = "pattern3.jpg"
         self._pattern_4_file_name = "pattern4.jpg"
 
+        # TODO: 使ってない変数？
         self.pattern_img = None
 
-    def get_res(self, img_rot, dir_path):
+    def get_res(self, img_rot, dir_path):  # TODO: もうちょっと何してるか分かる名前がいい
         """
         回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
 
@@ -54,24 +55,26 @@ class Matching:
                 (img_rot, self._get_pattern_image(dir_path + self._pattern_3_file_name)),
                 (img_rot, self._get_pattern_image(dir_path + self._pattern_4_file_name))]
         count_and_pattern_img_list = p.map(self._get_matching_count_and_pass_pattern_img, args)
+        # TODO: count_and_pattern_img = max(count_and_pattern_img_list, key=lambda x: x[1])　とかでできそう。
         count_list = [count_and_pattern_img[0] for count_and_pattern_img in count_and_pattern_img_list]
         max_value = max(count_list)
         max_index = count_list.index(max_value)
         pattern_img = count_and_pattern_img_list[max_index][1]
         return pattern_img
 
+    # TODO: これくらいはメソッド作らないでいい気がする。もしくは、パターン画像、パターン画像のパスを持ったクラスを作るとか？
     @staticmethod
     def _get_pattern_image(file_name):
         """パターン画像の取得"""
         return cv2.imread(file_name)
 
-    def _get_matching_count_and_pass_pattern_img(self, arg):
+    def _get_matching_count_and_pass_pattern_img(self, arg):  # TODO: (self, arg)じゃなく、(self, img_rot, pattern_img)でいいのでは。
         """
-        回転後画像とパターン画像のテンプレートマッチングの計数結果とファイル名を返す
+        回転後画像とパターン画像のテンプレートマッチングの計数結果とファイル名を返す　TODO: ファイル名ではなく画像。
         並列処理により4回処理される
 
         Args:
-            arg ([(img_bgr, img_bgr),]): 回転後画像、パターン画像
+            arg ([(img_bgr, img_bgr),]): 回転後画像、パターン画像  TODO: []が不要？
 
         Returns:
             int, img_bgr: カウント数(1つのパターン画像にいくつも矩形が表示されるので実際の製品数ではない)、パターン画像
@@ -81,7 +84,7 @@ class Matching:
         pattern_img_gray = cv2.cvtColor(pattern_img, cv2.COLOR_BGR2GRAY)
         result = cv2.matchTemplate(img_rot_gray, pattern_img_gray, cv2.TM_CCOEFF_NORMED)
         match_count = np.count_nonzero(result >= self.threshold)
-        return match_count, pattern_img
+        return match_count, pattern_img  # TODO: パターン画像を返す必要があるのか。
 
     @staticmethod
     def _template_match(img_rot, pattern):
@@ -93,7 +96,7 @@ class Matching:
             pattern (img_bgr): パターン画像
 
         Returns:
-            img_th: マッチング結果画像
+            img_th: マッチング結果画像  TODO: img_th(二値化画像)ではないはず。各座標での類似度がfloat32で入ったimg_rotよりちょっと小さい二次元配列。
         """
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
         pattern_gray = cv2.cvtColor(pattern, cv2.COLOR_BGR2GRAY)
@@ -115,9 +118,10 @@ class ResultImage:
         self._kernel = np.ones((k_size, k_size), np.uint8)
 
         self._margin_of_matching_range = margin_of_matching_range
-        self._threshold_of_matching_cover = threshold_of_matching_cover
+        self._threshold_of_matching_cover = threshold_of_matching_cover  # TODO: threshold?別の名前考えたほうが良さそう。
         self._color_drawing_match_result = color_drawing_match_result
 
+    # TODO: 類似度の配列から最終的な輪郭(new_cons)を返す関数と、それと画像を受け取って画像に輪郭を描画する関数に分け(_draw_contoursをパブリックにし）たほうがいいとおもう。
     def get_result_img_and_count_result(self, img_rot, res, pattern_img):
         """
         回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
@@ -137,6 +141,20 @@ class ResultImage:
         img_rot = img_rot[y_min:y_max, x_min:x_max]
         img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
         new_cons = self._get_contours(img_black_back_and_white_rect)
+
+        # TODO:
+        #   ↑つまりここまででやってるのは、類似度が閾値以上の座標に四角を描き、
+        #   ただ、そのままだと一つの製品に対しいくつも四角が描かれてしまうので、重複してる四角を除外するという処理。(と、小さい四角の除去)
+        #   物体検出の世界で良く使われるNonMaximumSuppressionという処理(https://python-ai-learn.com/2021/02/14/nmsfast/)に似てる。
+        #   NonMaximumSuppressionで検索すると色々実装方法があるし、OpenCVにも実装されてるが、NMS自体はどれも四角の数が多いとどんどん遅くなる。多分。
+        #   ローム株式会社のときにこんなやり方も考えて、数が多くてもある程度速そうだが、ちゃんと除外できているか、除外しすぎていないかは精査してない。
+        #       kernel_width = kernel_height = 3        # 適当。パターン画像のサイズとか？
+        #       kernel = np.ones((kernel_height, kernel_width), np.uint8)
+        #       res_filtered = cv2.dilate(res, kernel)  # maximumフィルター。カーネルの範囲内の最大値で置き換え -> 自分が最大値の場合は置き換わらない。
+        #       loc = np.where((res == res_filtered) & (res >= self.threshold))  # フィルター適用後も同じ値、かつ、閾値以上の座標を取得。
+        #       new_cons = locから輪郭を得る関数(loc, pattern_w, pattern_h)         # 必要なら。数をカウント、画像に四角を描画するだけならlocのままでいい。
+        #   と、まあどれがいいかは分からないが、逆に言うとここだけ分割しておけば、後からでも置き換えやすい。
+
         count_result = len(new_cons)
         result_img = self._draw_contours(img_rot, new_cons)
         return result_img, count_result
@@ -153,10 +171,11 @@ class ResultImage:
             img_th: 黒画像
         """
         h, w = img_rot.shape[:2]
+        # TODO: return np.zeros((h, w), np.uint8)
         black_back = np.zeros((h, w))
         return black_back.astype(np.uint8)
 
-    def _get_img_black_back_and_white_rect(self, res, black, w, h):
+    def _get_img_black_back_and_white_rect(self, res, black, w, h):  # TODO: X_and_Yという名前だと返り値が複数ある印象。
         """
         resをもとにマッチングした位置を白くした黒画像を作成
 
@@ -172,12 +191,13 @@ class ResultImage:
         loc = np.where(res >= self.threshold)
         for pt in zip(*loc[::-1]):
             cv2.rectangle(black, pt, (pt[0] + w, pt[1] + h), 255, -1)
+            # TODO: 破壊的メソッドであることを明確にするため、左辺を無くして、self._add_gap(black, pt, (pt[0] + w, pt[1] + h))だけでもいいかも。
             black = self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
         return black
 
     def _get_trim_coordinates(self, img_th):
         """
-        白矩形付き黒画像から白矩形全体を囲うような範囲を取得し、そこから前後左右200pxずつ広げた点を取得する
+        白矩形付き黒画像から白矩形全体を囲うような範囲を取得し、そこから前後左右200pxずつ広げた点を取得する  TODO: 200 -> _margin_of_matching_range
 
         Args:
             img_th (img_th): 白矩形付き黒画像
@@ -188,7 +208,7 @@ class ResultImage:
         img_h, img_w = img_th.shape
         img_th = cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, self._kernel)
         contours, _ = cv2.findContours(img_th, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        if contours != 0:
+        if contours != 0:  # TODO: contoursはタプル（リスト？）なので、contours != 0 では輪郭がない時(contours = (), contours = [])もここに入ってしまう
             contour = np.vstack(contours)
             x, y, w, h = cv2.boundingRect(contour)
             x_left = x
@@ -239,20 +259,22 @@ class ResultImage:
         result = cv2.addWeighted(img, 0.5, gray, 0.5, 0)
         return result
 
+    # TODO: できるだけ実際に使われてる箇所の近くに書いて欲しい。
     @staticmethod
-    def _add_gap(black, top_left, bottom_right):
+    def _add_gap(black, top_left, bottom_right):  # TODO: xyの順番的にleft_top, right_bottomでは
         """
         白矩形付き黒画像の矩形同士がくっついているかもしれないので、黒い矩形を描画して切り離す
         Args:
             black (img_th): 白矩形付き黒画像
-            top_left (): 白矩形の左上
-            bottom_right (): 白矩形の右下
+            top_left (): 白矩形の左上         # TODO: 型名
+            bottom_right (): 白矩形の右下     # TODO: 型名
 
         Returns:
             img_th: 白矩形付き黒画像(白矩形同士にくっつき除去)
         """
-        return cv2.rectangle(black, top_left, bottom_right, 0, 3)
+        return cv2.rectangle(black, top_left, bottom_right, 0, 3)  # TODO: マジックナンバー
 
+    # TODO: できるだけ実際に使われてる箇所の近くに書いて欲しい。
     @staticmethod
     def _find_threshold(contours):  # 閾値の返り値が各cntの1/5に必ずなる→_count関数でif area > area_threshold:してる意味がない(ノイズ除去？)
         """
@@ -266,7 +288,7 @@ class ResultImage:
         """
         area_list = [cv2.contourArea(cnt) for cnt in contours]
         max_area = max(area_list)
-        return int(max_area / 5)
+        return int(max_area / 5)  # TODO: Intにする必要なさそう。
 
 
 if __name__ == "__main__":

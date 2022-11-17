@@ -130,16 +130,7 @@ class Preprocess:
                     #  horizontal_deg_list = リスト内包表記、で同じだと思う。リストを渡してそれが上書きされていくのはなんか気持ち悪い。
                     horizontal_deg_list = self._list_of_rounded_angles(horizontal_line, horizontal_deg_list)
                 # 正しく回転している場合は-0.5°~0.5°の角度以外は検出されない(?)
-                # TODO: if len(horizontal_deg_list) and ... -> if horizontal_deg_list and ...
-                # TODO: -0.5 <= X <= 0.5と書ける、と書いてしまったが、それはXがint, floatなんかの場合のみ。Xが配列の場合無理。
-                #  np.all(arr)はarrの要素全てがTrueならTrue、一つでもFalse(0)があればFalseを返すので、
-                #  この場合horizontal_deg_listに0が一つでもあれば、np.all(np.array(horizontal_deg_list))はFalse(=0)になり
-                #  -0.5 <= np.all(np.array(horizontal_deg_list)) <= 0.5がTrueになってしまう。
-                #  なので、正しくは元のやつのように
-                #  np.all(-0.5 <= np.array(horizontal_deg_list)) and np.all(np.array(horizontal_deg_list) <= 0.5)
-                #  もしくは、ちょっと賢くやるなら
-                #  np.all(np.abs(horizontal_deg_list) <= 0.5)
-                if len(horizontal_deg_list) and -0.5 <= np.all(np.array(horizontal_deg_list)) <= 0.5:
+                if horizontal_deg_list and np.all(np.abs(horizontal_deg_list) <= 0.5):
                     result_deg = deg
                     break
         if result_deg is None:

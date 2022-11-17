@@ -109,13 +109,8 @@ class Preprocess:
 
     def _list_of_degree(self, lines):
         """linesを基にして、傾いている角度のリスト取得"""
-        # TODO: set内包表記でfor文使わずに書ける。速いかどうかは知らないけど。
-        deg_list = []
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            deg = self._degree(x1, y1, x2, y2)  # 角度を求める
-            deg_list.append(deg)
-        return list(set(deg_list))
+        deg_list_set = {self._degree(line[0][0], line[0][1], line[0][2], line[0][3]) for line in lines}
+        return list(deg_list_set)
 
     def _get_result_deg(self, deg_list, img_canny, min_length, threshold):
         """角度のリストから条件に合う角度を取得"""

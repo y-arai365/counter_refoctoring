@@ -123,16 +123,12 @@ class Preprocess:
         for deg in deg_list[:self._number_to_take_from_list]:
             img_canny_rot = self._rotation(img_canny, deg)
             horizontal_lines, _, _ = self._detect_line(img_canny_rot, min_length, threshold)
-            if horizontal_lines is not None:  # 直線が検出できた場合
-                horizontal_deg_list = []
-                for horizontal_line in horizontal_lines:
-                    # TODO: _list_of_rounded_anglesにはhorizontal_lineだけ渡して角度を返すようにして、
-                    #  horizontal_deg_list = リスト内包表記、で同じだと思う。リストを渡してそれが上書きされていくのはなんか気持ち悪い。
-                    horizontal_deg_list = self._list_of_rounded_angles(horizontal_line, horizontal_deg_list)
-                # 正しく回転している場合は-0.5°~0.5°の角度以外は検出されない(?)
-                if horizontal_deg_list and np.all(np.abs(horizontal_deg_list) <= 0.5):
-                    result_deg = deg
-                    break
+            horizontal_deg_list = [self._round_angle(horizontal_line) for horizontal_line in horizontal_lines
+                                   if horizontal_lines is not None]
+            # 正しく回転している場合は-0.5°~0.5°の角度以外は検出されない(?)
+            if horizontal_deg_list and np.all(np.abs(horizontal_deg_list) <= 0.5):
+                result_deg = deg
+                break
         if result_deg is None:
             result_deg = self._get_median(deg_list)
         return result_deg
@@ -209,17 +205,13 @@ class Preprocess:
             deg -= 90
         return deg
 
-    def _list_of_rounded_angles(self, line, deg_list):
+    def _round_angle(self, line):
         """小数点第2位を丸めた角度リストを作成"""
         x1, y1, x2, y2 = line[0]
         deg = self._degree(x1, y1, x2, y2)
         deg_decimal = Decimal(deg).quantize(Decimal("0.1"), rounding=ROUND_DOWN)
         deg = float(deg_decimal)
-        deg_list.append(deg)
-        if deg != -45.0 and deg != 45.0:
-            if deg not in deg_list:
-                deg_list.append(deg)
-        return deg_list
+        return deg
 
     @staticmethod
     def _get_median(deg_list):

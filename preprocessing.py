@@ -139,8 +139,8 @@ class Preprocess:
         # 回転
         rotation_matrix = cv2.getRotationMatrix2D((w / 2, h / 2), deg, 1)
         # 平行移動(rotation + translation)
-        rotation_matrix[0][2] = rotation_matrix[0][2] - w / 2 + w_rot / 2  # TODO: rotation_matrix[0][2] += ...　とか書ける。
-        rotation_matrix[1][2] = rotation_matrix[1][2] - h / 2 + h_rot / 2
+        rotation_matrix[0][2] += (w_rot / 2 - w / 2)
+        rotation_matrix[1][2] += (h_rot / 2 - h / 2)
         return cv2.warpAffine(img, rotation_matrix, (w_rot, h_rot), flags=cv2.INTER_CUBIC)
 
     @staticmethod

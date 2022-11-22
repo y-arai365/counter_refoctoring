@@ -211,21 +211,8 @@ class Preprocess:
         """角度リストの中央値取得"""
         deg_abs_list = np.abs(deg_list)
         deg_abs_min = np.min(deg_abs_list)
-
-        # TODO: (deg_abs_list - deg_abs_min) < 30 で [False, False, True, False, True, ...]みたいなarrayが得られるので、
-        #  あとはdeg_listに渡せば欲しいものだけ抽出できる。良く使うので覚えておきましょう。
-        #  例:
-        #   >>> a = np.array([1, 2, 3, 4, 5, 6])
-        #   >>> odds = a % 2 == 0
-        #   >>> odds
-        #   array([False,  True, False,  True, False,  True])
-        #   >>> a[odds]
-        #   array([2, 4, 6])
-
-        new_deg_list = []
-        for index, boolean in enumerate((deg_abs_list - deg_abs_min) < 30):  # 角度の絶対値の最小より30以上離れている角度は削除
-            if boolean:
-                new_deg_list.append(deg_list[index])
+        condition = deg_abs_list - deg_abs_min < 30  # 角度の絶対値の最小より30以上離れている角度は削除
+        new_deg_list = np.array(deg_list)[condition]
         return np.median(new_deg_list)
 
 

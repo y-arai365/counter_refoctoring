@@ -7,8 +7,8 @@ from perspective_transform import PerspectiveTransformer
 
 
 class LoadPerspectiveNumFile:
-    def __init__(self):
-        self.pers_num_path = "pers_num.npy"  # TODO: パスを外から渡す形に
+    def __init__(self, pers_num_path="pers_num.npy"):
+        self.pers_num_path = pers_num_path
         self.pts = np.load(self.pers_num_path)[0]
 
 
@@ -24,9 +24,8 @@ class Preprocess:
             width (int): オリジナル画像の幅
             height (int): オリジナル画像の高さ
         """
-        # TODO: プライベートな変数は頭にアンダースコア
-        self.load_pers_num_file = LoadPerspectiveNumFile()
-        self.perspective = PerspectiveTransformer(width, height, self.load_pers_num_file.pts)
+        self._load_pers_num_file = LoadPerspectiveNumFile()
+        self._perspective = PerspectiveTransformer(width, height, self._load_pers_num_file.pts)
 
         self._kernel = np.ones((k_size, k_size), np.uint8)
         self._max_gap = max_gap
@@ -56,7 +55,7 @@ class Preprocess:
             return img_trans_rot
         deg_list = self._list_of_degree(lines)
         result_deg = self._get_result_deg(deg_list, img_canny, min_length, threshold)
-        img_trans = self.perspective.transform(img)
+        img_trans = self._perspective.transform(img)
         img_trans_rot = self._rotation(img_trans, result_deg)
         return img_trans_rot
 
@@ -72,7 +71,7 @@ class Preprocess:
         # 画像を2値化してエッジ検出する
         img_gray = self._gray_scale(img)
         img_canny = self._canny_edge_detect(img_gray)  # エッジ検出
-        img_pers = self.perspective.transform(img_canny)  # 射影変換
+        img_pers = self._perspective.transform(img_canny)  # 射影変換
         img_close = self._morphology_close(img_pers)
         # エッジの穴の部分を埋めるための輪郭検出
         img_close = self._draw_contours(img_close)
@@ -131,11 +130,11 @@ class Preprocess:
     @staticmethod
     def _rotation(img, deg):
         """画像の回転"""
-        deg_rad = deg/180*np.pi  # TODO: degreeなのかradianなのか
+        rad = deg/180*np.pi
         h, w = img.shape[:2]
         # 回転後の画像サイズを計算
-        w_rot = int(np.round(h * np.absolute(np.sin(deg_rad)) + w * np.absolute(np.cos(deg_rad))))
-        h_rot = int(np.round(h * np.absolute(np.cos(deg_rad)) + w * np.absolute(np.sin(deg_rad))))
+        w_rot = int(np.round(h * np.absolute(np.sin(rad)) + w * np.absolute(np.cos(rad))))
+        h_rot = int(np.round(h * np.absolute(np.cos(rad)) + w * np.absolute(np.sin(rad))))
         # 回転
         rotation_matrix = cv2.getRotationMatrix2D((w / 2, h / 2), deg, 1)
         # 平行移動(rotation + translation)

@@ -186,6 +186,20 @@ class ResultImage:
             self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
         return black
 
+    @staticmethod
+    def _add_gap(black, left_top, right_bottom):
+        """
+        白矩形付き黒画像の矩形同士がくっついているかもしれないので、黒い矩形を描画して切り離す
+        Args:
+            black (img_th): 白矩形付き黒画像
+            left_top ((int, int)): 白矩形の左上
+            right_bottom ((int, int)): 白矩形の右下
+
+        Returns:
+            img_th: 白矩形付き黒画像(白矩形同士にくっつき除去)
+        """
+        return cv2.rectangle(black, left_top, right_bottom, 0, 3)  # TODO: マジックナンバー
+
     def _get_trim_coordinates(self, img_th):
         """
         白矩形付き黒画像から白矩形全体を囲うような範囲を取得し、そこから前後左右一定のpxずつ広げた点を取得する
@@ -233,6 +247,21 @@ class ResultImage:
         new_cons = [cnt for cnt in contours if cv2.contourArea(cnt) > area_threshold]
         return new_cons
 
+    @staticmethod
+    def _find_threshold(contours):  # 閾値の返り値が各cntの1/5に必ずなる→_count関数でif area > area_threshold:してる意味がない(ノイズ除去？)
+        """
+        黒画像内で面積が最大の白領域の1/5を製品検出時の閾値にする
+
+        Args:
+            contours (list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]): 輪郭のリスト
+
+        Returns:
+            int: 製品検出時の閾値
+        """
+        area_list = [cv2.contourArea(cnt) for cnt in contours]
+        max_area = max(area_list)
+        return max_area / 5
+
     def _draw_contours(self, img, new_cons):
         """
         輪郭リストを基に回転画像に検出位置を描画
@@ -249,37 +278,6 @@ class ResultImage:
         gray = cv2.drawContours(gray, new_cons, -1, self._color_drawing_match_result, -1)
         result = cv2.addWeighted(img, 0.5, gray, 0.5, 0)
         return result
-
-    # TODO: できるだけ実際に使われてる箇所の近くに書いて欲しい。
-    @staticmethod
-    def _add_gap(black, left_top, right_bottom):
-        """
-        白矩形付き黒画像の矩形同士がくっついているかもしれないので、黒い矩形を描画して切り離す
-        Args:
-            black (img_th): 白矩形付き黒画像
-            left_top ((int, int)): 白矩形の左上
-            right_bottom ((int, int)): 白矩形の右下
-
-        Returns:
-            img_th: 白矩形付き黒画像(白矩形同士にくっつき除去)
-        """
-        return cv2.rectangle(black, left_top, right_bottom, 0, 3)  # TODO: マジックナンバー
-
-    # TODO: できるだけ実際に使われてる箇所の近くに書いて欲しい。
-    @staticmethod
-    def _find_threshold(contours):  # 閾値の返り値が各cntの1/5に必ずなる→_count関数でif area > area_threshold:してる意味がない(ノイズ除去？)
-        """
-        黒画像内で面積が最大の白領域の1/5を製品検出時の閾値にする
-
-        Args:
-            contours (list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]): 輪郭のリスト
-
-        Returns:
-            int: 製品検出時の閾値
-        """
-        area_list = [cv2.contourArea(cnt) for cnt in contours]
-        max_area = max(area_list)
-        return max_area / 5
 
 
 if __name__ == "__main__":

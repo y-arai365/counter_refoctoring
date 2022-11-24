@@ -50,10 +50,10 @@ class Matching:
             img_bgr: マッチングに使うパターン画像
         """
         p = Pool(4)
-        args = [(img_rot, self._get_pattern_image(dir_path + self._pattern_1_file_name)),
-                (img_rot, self._get_pattern_image(dir_path + self._pattern_2_file_name)),
-                (img_rot, self._get_pattern_image(dir_path + self._pattern_3_file_name)),
-                (img_rot, self._get_pattern_image(dir_path + self._pattern_4_file_name))]
+        args = [(img_rot, cv2.imread(dir_path + self._pattern_1_file_name)),
+                (img_rot, cv2.imread(dir_path + self._pattern_2_file_name)),
+                (img_rot, cv2.imread(dir_path + self._pattern_3_file_name)),
+                (img_rot, cv2.imread(dir_path + self._pattern_4_file_name))]
         count_and_pattern_img_list = p.map(self._get_matching_count_and_pass_pattern_img, args)
         # TODO: count_and_pattern_img = max(count_and_pattern_img_list, key=lambda x: x[1])　とかでできそう。
         count_list = [count_and_pattern_img[0] for count_and_pattern_img in count_and_pattern_img_list]
@@ -61,12 +61,6 @@ class Matching:
         max_index = count_list.index(max_value)
         pattern_img = count_and_pattern_img_list[max_index][1]
         return pattern_img
-
-    # TODO: これくらいはメソッド作らないでいい気がする。もしくは、パターン画像、パターン画像のパスを持ったクラスを作るとか？
-    @staticmethod
-    def _get_pattern_image(file_name):
-        """パターン画像の取得"""
-        return cv2.imread(file_name)
 
     def _get_matching_count_and_pass_pattern_img(self, arg):  # TODO: (self, arg)じゃなく、(self, img_rot, pattern_img)でいいのでは。
         """

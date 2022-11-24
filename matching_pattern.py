@@ -68,7 +68,7 @@ class Matching:
         並列処理により4回処理される
 
         Args:
-            arg ([(img_bgr, img_bgr),]): 回転後画像、パターン画像  TODO: []が不要？
+            arg ((img_bgr, img_bgr),): 回転後画像、パターン画像
 
         Returns:
             int, img_bgr: カウント数(1つのパターン画像にいくつも矩形が表示されるので実際の製品数ではない)、パターン画像
@@ -90,7 +90,7 @@ class Matching:
             pattern (img_bgr): パターン画像
 
         Returns:
-            img_th: マッチング結果画像  TODO: img_th(二値化画像)ではないはず。各座標での類似度がfloat32で入ったimg_rotよりちょっと小さい二次元配列。
+            np.ndarray: マッチング結果画像
         """
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
         pattern_gray = cv2.cvtColor(pattern, cv2.COLOR_BGR2GRAY)
@@ -99,7 +99,7 @@ class Matching:
 
 class ResultImage:
     def __init__(self, k_size, threshold, margin_of_matching_range=200,
-                 threshold_of_matching_cover=100, color_drawing_match_result=(30, 255, 0)):
+                 grayscale_of_matching_cover=100, color_drawing_match_result=(30, 255, 0)):
         """
         マッチングの結果を画像に描画するクラス
 
@@ -112,7 +112,7 @@ class ResultImage:
         self._kernel = np.ones((k_size, k_size), np.uint8)
 
         self._margin_of_matching_range = margin_of_matching_range
-        self._threshold_of_matching_cover = threshold_of_matching_cover  # TODO: threshold?別の名前考えたほうが良さそう。
+        self._grayscale_of_matching_cover = grayscale_of_matching_cover
         self._color_drawing_match_result = color_drawing_match_result
 
     # TODO: 類似度の配列から最終的な輪郭(new_cons)を返す関数と、それと画像を受け取って画像に輪郭を描画する関数に分け(_draw_contoursをパブリックにし）たほうがいいとおもう。
@@ -274,7 +274,7 @@ class ResultImage:
             img_bgr: 検出位置を緑の矩形で描画して示した画像
         """
         img_h, img_w = img.shape[:2]
-        gray = np.ones((img_h, img_w, 3), np.uint8) * self._threshold_of_matching_cover
+        gray = np.ones((img_h, img_w, 3), np.uint8) * self._grayscale_of_matching_cover
         gray = cv2.drawContours(gray, new_cons, -1, self._color_drawing_match_result, -1)
         result = cv2.addWeighted(img, 0.5, gray, 0.5, 0)
         return result

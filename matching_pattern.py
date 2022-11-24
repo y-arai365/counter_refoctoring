@@ -136,7 +136,7 @@ class ResultImage:
         """
         pattern_h, pattern_w = pattern_img.shape[:2]
         black_back = self._get_black_back(img_rot)
-        img_black_back_and_white_rect = self._get_img_black_back_and_white_rect(res, black_back, pattern_w, pattern_h)
+        img_black_back_and_white_rect = self._get_img_binary_chip(res, black_back, pattern_w, pattern_h)
         x_min, x_max, y_min, y_max = self._get_trim_coordinates(img_black_back_and_white_rect)
         img_rot = img_rot[y_min:y_max, x_min:x_max]
         img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
@@ -171,11 +171,9 @@ class ResultImage:
             img_th: 黒画像
         """
         h, w = img_rot.shape[:2]
-        # TODO: return np.zeros((h, w), np.uint8)
-        black_back = np.zeros((h, w))
-        return black_back.astype(np.uint8)
+        return np.zeros((h, w), np.uint8)
 
-    def _get_img_black_back_and_white_rect(self, res, black, w, h):  # TODO: X_and_Yという名前だと返り値が複数ある印象。
+    def _get_img_binary_chip(self, res, black, w, h):
         """
         resをもとにマッチングした位置を白くした黒画像を作成
 
@@ -191,13 +189,12 @@ class ResultImage:
         loc = np.where(res >= self.threshold)
         for pt in zip(*loc[::-1]):
             cv2.rectangle(black, pt, (pt[0] + w, pt[1] + h), 255, -1)
-            # TODO: 破壊的メソッドであることを明確にするため、左辺を無くして、self._add_gap(black, pt, (pt[0] + w, pt[1] + h))だけでもいいかも。
-            black = self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
+            self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
         return black
 
     def _get_trim_coordinates(self, img_th):
         """
-        白矩形付き黒画像から白矩形全体を囲うような範囲を取得し、そこから前後左右200pxずつ広げた点を取得する  TODO: 200 -> _margin_of_matching_range
+        白矩形付き黒画像から白矩形全体を囲うような範囲を取得し、そこから前後左右一定のpxずつ広げた点を取得する
 
         Args:
             img_th (img_th): 白矩形付き黒画像
@@ -261,18 +258,18 @@ class ResultImage:
 
     # TODO: できるだけ実際に使われてる箇所の近くに書いて欲しい。
     @staticmethod
-    def _add_gap(black, top_left, bottom_right):  # TODO: xyの順番的にleft_top, right_bottomでは
+    def _add_gap(black, left_top, right_bottom):
         """
         白矩形付き黒画像の矩形同士がくっついているかもしれないので、黒い矩形を描画して切り離す
         Args:
             black (img_th): 白矩形付き黒画像
-            top_left (): 白矩形の左上         # TODO: 型名
-            bottom_right (): 白矩形の右下     # TODO: 型名
+            left_top ((int, int)): 白矩形の左上
+            right_bottom ((int, int)): 白矩形の右下
 
         Returns:
             img_th: 白矩形付き黒画像(白矩形同士にくっつき除去)
         """
-        return cv2.rectangle(black, top_left, bottom_right, 0, 3)  # TODO: マジックナンバー
+        return cv2.rectangle(black, left_top, right_bottom, 0, 3)  # TODO: マジックナンバー
 
     # TODO: できるだけ実際に使われてる箇所の近くに書いて欲しい。
     @staticmethod
@@ -288,7 +285,7 @@ class ResultImage:
         """
         area_list = [cv2.contourArea(cnt) for cnt in contours]
         max_area = max(area_list)
-        return int(max_area / 5)  # TODO: Intにする必要なさそう。
+        return max_area / 5
 
 
 if __name__ == "__main__":

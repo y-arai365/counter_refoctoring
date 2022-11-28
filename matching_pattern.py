@@ -210,7 +210,7 @@ class ResultImage:
         img_h, img_w = img_th.shape
         img_th = cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, self._kernel)
         contours, _ = cv2.findContours(img_th, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        if contours != 0:  # TODO: contoursはタプル（リスト？）なので、contours != 0 では輪郭がない時(contours = (), contours = [])もここに入ってしまう
+        if contours:
             contour = np.vstack(contours)
             x, y, w, h = cv2.boundingRect(contour)
             x_left = x

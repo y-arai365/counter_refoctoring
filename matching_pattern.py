@@ -54,31 +54,28 @@ class Matching:
                 (img_rot, cv2.imread(dir_path + self._pattern_2_file_name)),
                 (img_rot, cv2.imread(dir_path + self._pattern_3_file_name)),
                 (img_rot, cv2.imread(dir_path + self._pattern_4_file_name))]
-        count_and_pattern_img_list = p.map(self._get_matching_count_and_pass_pattern_img, args)
-        # TODO: count_and_pattern_img = max(count_and_pattern_img_list, key=lambda x: x[1])　とかでできそう。
-        count_list = [count_and_pattern_img[0] for count_and_pattern_img in count_and_pattern_img_list]
-        max_value = max(count_list)
-        max_index = count_list.index(max_value)
-        pattern_img = count_and_pattern_img_list[max_index][1]
+        count_list = p.starmap(self._get_matching_count_and_pass_pattern_img, args)
+        max_index = count_list.index(max(count_list))
+        pattern_img = args[max_index][1]
         return pattern_img
 
-    def _get_matching_count_and_pass_pattern_img(self, arg):  # TODO: (self, arg)じゃなく、(self, img_rot, pattern_img)でいいのでは。
+    def _get_matching_count_and_pass_pattern_img(self, img_rot, pattern_img):
         """
-        回転後画像とパターン画像のテンプレートマッチングの計数結果とファイル名を返す　TODO: ファイル名ではなく画像。
+        回転後画像とパターン画像をテンプレートマッチングして、その計数結果を返す
         並列処理により4回処理される
 
         Args:
-            arg ((img_bgr, img_bgr),): 回転後画像、パターン画像
+            img_rot (img_bgr): 回転後画像
+            pattern_img (img_bgr): パターン画像
 
         Returns:
-            int, img_bgr: カウント数(1つのパターン画像にいくつも矩形が表示されるので実際の製品数ではない)、パターン画像
+            int: カウント数(1つのパターン画像にいくつも矩形が表示されるので実際の製品数ではない)
         """
-        img_rot, pattern_img = arg
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
         pattern_img_gray = cv2.cvtColor(pattern_img, cv2.COLOR_BGR2GRAY)
         result = cv2.matchTemplate(img_rot_gray, pattern_img_gray, cv2.TM_CCOEFF_NORMED)
         match_count = np.count_nonzero(result >= self.threshold)
-        return match_count, pattern_img  # TODO: パターン画像を返す必要があるのか。
+        return match_count
 
     @staticmethod
     def _template_match(img_rot, pattern):

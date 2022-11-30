@@ -61,7 +61,7 @@ class ImageRotater:
         rad = np.arctan2(vec[0], vec[1])
         deg = np.rad2deg(rad)
 
-        # これがないと長辺を水平にするための角度範囲が-45～-135(or45~135)になる、math.atan2のときの角度に合わせている  TODO: math -> np
+        # これがないと長辺を水平にするための角度範囲が-45～-135(or45~135)になる、numpyのときにも-90~90の角度でできるようにする
         deg = deg + 90
         if deg > 180:
             deg -= 360

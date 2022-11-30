@@ -260,12 +260,8 @@ if __name__ == "__main__":
     from preprocessing import Preprocess
     import time
 
-    # path_ = r"count/result/20220407/1200-1600-2/2173/上9/exp-4.jpg"
-    # path_ = r"count\result\20220407\1200-1600\2008\上6-9/exp-4.jpg"
-    path_ = r"count\result\20220906\test20220906_3\2-1\上5/exp-4.jpg"
-    # dir_path_ = r"count/pattern/1200-1600-2_/"
-    # dir_path_ = r"count/pattern/1200-1600/"
-    dir_path_ = r"count/pattern/test20220906_3/"
+    path_ = r""
+    dir_path_ = r""
 
     threshold_ = 500
     min_length_ = 500

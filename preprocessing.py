@@ -12,7 +12,6 @@ class LoadPerspectiveNumFile:
         self.pts = np.load(self.pers_num_path)[0]
 
 
-# TODO: エッジの取得、回転、と二つに分けてはどうか。射影変換クラス・エッジ取得クラス・回転クラス、とそれらを持つ前処理クラス、とか。
 class Preprocess:
     def __init__(self, width, height, k_size=3, canny_threshold_1=100, canny_threshold_2=200):
         """

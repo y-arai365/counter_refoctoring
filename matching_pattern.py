@@ -92,7 +92,7 @@ class Matching:
 
 
 class ResultImage:
-    def __init__(self, k_size, threshold, margin_of_matching_range=200,
+    def __init__(self, k_size, threshold, margin_of_matching_range=200, thickness=3,
                  grayscale_of_matching_cover=100, color_drawing_match_result=(30, 255, 0)):
         """
         マッチングの結果を画像に描画するクラス
@@ -104,6 +104,7 @@ class ResultImage:
         self.threshold = threshold
 
         self._kernel = np.ones((k_size, k_size), np.uint8)
+        self._thickness = thickness
 
         self._margin_of_matching_range = margin_of_matching_range
         self._grayscale_of_matching_cover = grayscale_of_matching_cover
@@ -179,8 +180,7 @@ class ResultImage:
             self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
         return black
 
-    @staticmethod
-    def _add_gap(black, left_top, right_bottom):
+    def _add_gap(self, black, left_top, right_bottom):
         """
         白矩形付き黒画像の矩形同士がくっついているかもしれないので、黒い矩形を描画して切り離す
         Args:
@@ -191,7 +191,7 @@ class ResultImage:
         Returns:
             img_th: 白矩形付き黒画像(白矩形同士にくっつき除去)
         """
-        return cv2.rectangle(black, left_top, right_bottom, 0, 3)  # TODO: マジックナンバー
+        return cv2.rectangle(black, left_top, right_bottom, 0, self._thickness)
 
     def _get_trim_coordinates(self, img_th):
         """

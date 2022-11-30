@@ -109,44 +109,6 @@ class ResultImage:
         self._grayscale_of_matching_cover = grayscale_of_matching_cover
         self._color_drawing_match_result = color_drawing_match_result
 
-    # # TODO: 類似度の配列から最終的な輪郭(new_cons)を返す関数と、それと画像を受け取って画像に輪郭を描画する関数に分け(_draw_contoursをパブリックにし）たほうがいいとおもう。
-    # def get_result_img_and_count_result(self, img_rot, res, pattern_img):
-    #     """
-    #     回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
-    #
-    #     Args:
-    #         img_rot (img_bgr): 回転画像
-    #         res (img_th): マッチング結果画像
-    #         pattern_img (img_bgr): パターン画像
-    #
-    #     Returns:
-    #         img_bgr, int: 結果描画後の画像、計数結果
-    #     """
-    #     pattern_h, pattern_w = pattern_img.shape[:2]
-    #     black_back = self._get_black_back(img_rot)
-    #     img_black_back_and_white_rect = self._get_img_binary_chip(res, black_back, pattern_w, pattern_h)
-    #     x_min, x_max, y_min, y_max = self._get_trim_coordinates(img_black_back_and_white_rect)
-    #     img_rot = img_rot[y_min:y_max, x_min:x_max]
-    #     img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
-    #     new_cons = self._get_contours(img_black_back_and_white_rect)
-    #
-    #     # TODO:
-    #     #   ↑つまりここまででやってるのは、類似度が閾値以上の座標に四角を描き、
-    #     #   ただ、そのままだと一つの製品に対しいくつも四角が描かれてしまうので、重複してる四角を除外するという処理。(と、小さい四角の除去)
-    #     #   物体検出の世界で良く使われるNonMaximumSuppressionという処理(https://python-ai-learn.com/2021/02/14/nmsfast/)に似てる。
-    #     #   NonMaximumSuppressionで検索すると色々実装方法があるし、OpenCVにも実装されてるが、NMS自体はどれも四角の数が多いとどんどん遅くなる。多分。
-    #     #   ローム株式会社のときにこんなやり方も考えて、数が多くてもある程度速そうだが、ちゃんと除外できているか、除外しすぎていないかは精査してない。
-    #     #       kernel_width = kernel_height = 3        # 適当。パターン画像のサイズとか？
-    #     #       kernel = np.ones((kernel_height, kernel_width), np.uint8)
-    #     #       res_filtered = cv2.dilate(res, kernel)  # maximumフィルター。カーネルの範囲内の最大値で置き換え -> 自分が最大値の場合は置き換わらない。
-    #     #       loc = np.where((res == res_filtered) & (res >= self.threshold))  # フィルター適用後も同じ値、かつ、閾値以上の座標を取得。
-    #     #       new_cons = locから輪郭を得る関数(loc, pattern_w, pattern_h)         # 必要なら。数をカウント、画像に四角を描画するだけならlocのままでいい。
-    #     #   と、まあどれがいいかは分からないが、逆に言うとここだけ分割しておけば、後からでも置き換えやすい。
-    #
-    #     count_result = len(new_cons)
-    #     result_img = self.draw_contours(img_rot, new_cons)
-    #     return result_img, count_result
-
     def get_contours_from_similarity_array_and_img_rot_trim(self, img_rot, res, pattern_img):
         """
         類似度が閾値以上の座標に矩形を置いた際の輪郭とそれによって取得した輪郭全体を囲うようにトリミングした回転画像を取得する
@@ -298,8 +260,12 @@ if __name__ == "__main__":
     from preprocessing import Preprocess
     import time
 
-    path_ = ""
-    dir_path_ = ""
+    # path_ = r"count/result/20220407/1200-1600-2/2173/上9/exp-4.jpg"
+    # path_ = r"count\result\20220407\1200-1600\2008\上6-9/exp-4.jpg"
+    path_ = r"count\result\20220906\test20220906_3\2-1\上5/exp-4.jpg"
+    # dir_path_ = r"count/pattern/1200-1600-2_/"
+    # dir_path_ = r"count/pattern/1200-1600/"
+    dir_path_ = r"count/pattern/test20220906_3/"
 
     threshold_ = 500
     min_length_ = 500

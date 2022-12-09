@@ -274,7 +274,7 @@ class Control(object):
                     res, pattern_img = match.get_matching_result(img_rot, pattern_dir)
                     contours, img_rot_trim = res_img.get_contours_from_similarity_array_and_img_rot_trim(img_rot, res, pattern_img)
                     is_count = len(contours)
-                    result = res_img.draw_contours(img_rot, contours)
+                    result = res_img.draw_contours(img_rot_trim, contours)
                 else:
                     binary = pickle.dumps(frame)
                     pickle_copy = pickle.loads(binary)

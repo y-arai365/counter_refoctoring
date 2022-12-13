@@ -65,7 +65,7 @@ class ImageRotater:
         deg = deg + 90
         if deg > 180:
             deg -= 360
-        if 0 < deg < 180:
+        if 0 < np.abs(deg) < 180:
             deg = -deg
 
         if 90 < deg:

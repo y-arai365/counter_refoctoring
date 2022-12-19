@@ -37,6 +37,9 @@ class Matching:
 
     def _choose_suitable_pattern_img(self, img_rot, dir_path):
         """
+        # TODO: ここでcv2.matchTemplateを４回やって、一番良さそうなパターン画像を見つけてもう一回get_matching_resultでcv2.matchTemplateの返り値を取得してる。
+                だったら、最初からcv2.matchTemplateの返り値を返すようにしておけば一回分節約できるのでは。
+
         複数あるパターン画像から適切なものを選ぶ
 
         Args:
@@ -56,7 +59,7 @@ class Matching:
         pattern_img = args[max_index][1]
         return pattern_img
 
-    def _get_matching_count_and_pass_pattern_img(self, img_rot, pattern_img):
+    def _get_matching_count_and_pass_pattern_img(self, img_rot, pattern_img):  # TODO: 関数名が変
         """
         回転後画像とパターン画像をテンプレートマッチングして、その計数結果を返す
         並列処理により4回処理される
@@ -100,6 +103,7 @@ class ResultImage:
         Args:
             k_size (int): 二値化画像をモルフォロジー変換するときのカーネル値
             threshold (float): 製品を検出するときの閾値
+            TODO: 他の引数も説明を書く。
         """
         self.threshold = threshold
 
@@ -112,10 +116,14 @@ class ResultImage:
 
     def get_contours_from_similarity_array_and_img_rot_trim(self, img_rot, res, pattern_img):
         """
+        # TODO: 最終的な製品の輪郭の取得と画像のトリミング、二つを一か所でやらずに分けたい。
+                最終的な製品の輪郭の取得（Non Maximum Suprresion的なやつ）はMatchingクラスが持ってるほうがいいかも。
+                トリミングはこっちでいい。だが、そもそもトリミングは必要なのか。
+
         類似度が閾値以上の座標に矩形を置いた際の輪郭とそれによって取得した輪郭全体を囲うようにトリミングした回転画像を取得する
         Args:
             img_rot (img_bgr): 回転画像
-            res (img_th): マッチング結果類似度
+            res (img_th): マッチング結果類似度  # TODO: img_thではない。
             pattern_img (img_bgr): パターン画像
 
         Returns:
@@ -123,7 +131,7 @@ class ResultImage:
         """
         pattern_h, pattern_w = pattern_img.shape[:2]
         black_back = self._get_black_back(img_rot)
-        img_black_back_and_white_rect = self._get_img_binary_chip(res, black_back, pattern_w, pattern_h)
+        img_black_back_and_white_rect = self._get_img_binary_chip(res, black_back, pattern_w, pattern_h)  # TODO: 変数名、関数名がわかりずらい。
         x_min, x_max, y_min, y_max = self._get_trim_coordinates(img_black_back_and_white_rect)
         img_rot = img_rot[y_min:y_max, x_min:x_max]
         img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
@@ -178,6 +186,12 @@ class ResultImage:
         for pt in zip(*loc[::-1]):
             cv2.rectangle(black, pt, (pt[0] + w, pt[1] + h), 255, -1)
             self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
+
+        # TODO: pycharmの警告回避。
+        # for x, y in zip(*loc[::-1]):
+        #     cv2.rectangle(black, (x, y), (x + w, y + h), 255, -1)
+        #     self._add_gap(black, (x, y), (x + w, y + h))
+
         return black
 
     def _add_gap(self, black, left_top, right_bottom):
@@ -249,7 +263,7 @@ class ResultImage:
             contours (list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]): 輪郭のリスト
 
         Returns:
-            int: 製品検出時の閾値
+            int: 製品検出時の閾値  # TODO: float
         """
         area_list = [cv2.contourArea(cnt) for cnt in contours]
         max_area = max(area_list)
@@ -270,7 +284,7 @@ if __name__ == "__main__":
     n = np.fromfile(path_, dtype=np.uint8)
     img_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
     height, width = img_.shape[:2]
-    pre = Preprocess(width, height)
+    pre = Preprocess(width, height)  # TODO: ここではMatching, ResultImageに関してだけ書けばいいので、Preprocessは要らない
     match_ = Matching(threshold=matching_threshold_)
     res_img_ = ResultImage(k_size=15, threshold=matching_threshold_)
 

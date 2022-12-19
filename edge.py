@@ -2,9 +2,9 @@ import numpy as np
 import cv2
 
 
-class EdgeGetter:
+class EdgeGetter:  # TODO: エッジではなく直線検出では。
     def __init__(self, min_length_decrease_value=50, threshold_decrease_value=50, max_gap=30):
-        """画像から直線が検出されたときに画像を回転させるクラス"""
+        """画像から直線が検出されたときに画像を回転させるクラス TODO: 引数に関しても書く。"""
         self._min_length_decrease_value = min_length_decrease_value
         self._threshold_decrease_value = threshold_decrease_value
         self._max_gap = max_gap
@@ -46,6 +46,7 @@ if __name__ == '__main__':
     img_orig_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
     height_, width_ = img_orig_.shape[:2]
 
+    # TODO: ここではEdgeGetter()に関してだけ書けばいいので、Preprocessは要らない
     pre = Preprocess(width_, height_)
     edge = EdgeGetter()
 

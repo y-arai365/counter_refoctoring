@@ -9,7 +9,7 @@ from edge import EdgeGetter
 class ImageRotater:
     def __init__(self, number_to_take_from_list=10, min_length_decrease_value=50, threshold_decrease_value=50,
                  max_gap=30):
-        """画像から直線が検出されたときに画像を回転させるクラス"""
+        """画像から直線が検出されたときに画像を回転させるクラス TODO: 引数に関しても書く。"""
         self._number_to_take_from_list = number_to_take_from_list
         self._min_length_decrease_value = min_length_decrease_value
         self._threshold_decrease_value = threshold_decrease_value
@@ -18,12 +18,12 @@ class ImageRotater:
         self.edge = EdgeGetter()
 
     def list_of_degree(self, lines):
-        """linesを基にして、傾いている角度のリスト取得"""
+        """linesを基にして、傾いている角度のリスト取得 TODO: 引数・返り値に関しても書く。"""
         deg_list_set = {self._degree(line[0][0], line[0][1], line[0][2], line[0][3]) for line in lines}
         return list(deg_list_set)
 
     def get_result_deg(self, deg_list, img_canny, min_length, threshold):
-        """角度のリストから条件に合う角度を取得"""
+        """角度のリストから条件に合う角度を取得 TODO: 引数・返り値に関しても書く。"""
         result_deg = None
         for deg in deg_list[:self._number_to_take_from_list]:
             img_canny_rot = self.rotation(img_canny, deg)
@@ -40,8 +40,8 @@ class ImageRotater:
 
     @staticmethod
     def rotation(img, deg):
-        """画像の回転"""
-        rad = deg/180*np.pi
+        """画像の回転 TODO: 引数・返り値に関しても書く。"""
+        rad = deg/180*np.pi  # TODO: np.deg2radと同じ？
         h, w = img.shape[:2]
         # 回転後の画像サイズを計算
         w_rot = int(np.round(h * np.absolute(np.sin(rad)) + w * np.absolute(np.cos(rad))))

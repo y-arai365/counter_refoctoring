@@ -4,7 +4,14 @@ import cv2
 
 class EdgeGetter:  # TODO: エッジではなく直線検出では。
     def __init__(self, min_length_decrease_value=50, threshold_decrease_value=50, max_gap=30):
-        """画像から直線が検出されたときに画像を回転させるクラス TODO: 引数に関しても書く。"""
+        """
+        画像から直線が検出されたときに画像を回転させるクラス
+
+        Args:
+            min_length_decrease_value: 二値化画像から直線を検出出来なかった時に減らす、直線検出時の最小直線距離の数値
+            threshold_decrease_value:  二値化画像から直線を検出出来なかった時に減らす、直線検出時の閾値の数値
+            max_gap: 線同士が離れていても同一の直線だと判断する最大値
+        """
         self._min_length_decrease_value = min_length_decrease_value
         self._threshold_decrease_value = threshold_decrease_value
         self._max_gap = max_gap

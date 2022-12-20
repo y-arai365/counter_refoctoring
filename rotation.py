@@ -9,7 +9,15 @@ from edge import EdgeGetter
 class ImageRotater:
     def __init__(self, number_to_take_from_list=10, min_length_decrease_value=50, threshold_decrease_value=50,
                  max_gap=30):
-        """画像から直線が検出されたときに画像を回転させるクラス TODO: 引数に関しても書く。"""
+        """
+        画像から直線が検出されたときに画像を回転させるクラス
+
+        Args:
+            number_to_take_from_list: 角度リストから回転に使うものを取得する際に一部の角度だけ参照するがその際に参照する数
+            min_length_decrease_value: 二値化画像から直線を検出出来なかった時に減らす、直線検出時の最小直線距離の数値
+            threshold_decrease_value:  二値化画像から直線を検出出来なかった時に減らす、直線検出時の閾値の数値
+            max_gap: 線同士が離れていても同一の直線だと判断する最大値
+        """
         self._number_to_take_from_list = number_to_take_from_list
         self._min_length_decrease_value = min_length_decrease_value
         self._threshold_decrease_value = threshold_decrease_value
@@ -18,12 +26,31 @@ class ImageRotater:
         self.edge = EdgeGetter()
 
     def list_of_degree(self, lines):
-        """linesを基にして、傾いている角度のリスト取得 TODO: 引数・返り値に関しても書く。"""
+        """
+        linesを基にして、傾いている角度のリスト取得
+
+        Args:
+            lines(list(np.ndarray(X, 1, 4),) or None): 直線のリスト(右x, 右y, 左x, 左y) or None
+
+        Returns:
+            list(float): 直線の座標をもとにした角度のリスト
+        """
         deg_list_set = {self._degree(line[0][0], line[0][1], line[0][2], line[0][3]) for line in lines}
         return list(deg_list_set)
 
     def get_result_deg(self, deg_list, img_canny, min_length, threshold):
-        """角度のリストから条件に合う角度を取得 TODO: 引数・返り値に関しても書く。"""
+        """
+        角度のリストから条件に合う角度を取得
+
+        Args:
+            deg_list(list[float]): 角度のリスト
+            img_canny(img_th): エッジ検出した二値化画像　
+            min_length(int): 直線検出するときの最小直線距離
+            threshold(int): 直線検出するときの閾値
+
+        Returns:
+            float: 画像回転時に使う角度
+        """
         result_deg = None
         for deg in deg_list[:self._number_to_take_from_list]:
             img_canny_rot = self.rotation(img_canny, deg)
@@ -40,7 +67,16 @@ class ImageRotater:
 
     @staticmethod
     def rotation(img, deg):
-        """画像の回転 TODO: 引数・返り値に関しても書く。"""
+        """
+        画像の回転
+
+        Args:
+            img(img_bgr): オリジナル画像を射影変換したもの
+            deg(float): 画像回転時の角度
+
+        Returns:
+            img_bgr: 回転後の画像
+        """
         rad = deg/180*np.pi  # TODO: np.deg2radと同じ？
         h, w = img.shape[:2]
         # 回転後の画像サイズを計算

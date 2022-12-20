@@ -103,7 +103,10 @@ class ResultImage:
         Args:
             k_size (int): 二値化画像をモルフォロジー変換するときのカーネル値
             threshold (float): 製品を検出するときの閾値
-            TODO: 他の引数も説明を書く。
+            margin_of_matching_range: 画像から製品のある部分だけを取り出す時の周囲の余白量
+            thickness: 二値化画像で黒背景に白の矩形を描画するときに白矩形同士が当たらないように描画する黒矩形の太さ
+            grayscale_of_matching_cover: 結果出力時に作成する、検出位置を緑の矩形で示した画像の背景部分の色(二値)
+            color_drawing_match_result: 結果出力時に作成する、検出位置を緑の矩形で示した画像の矩形部分の色
         """
         self.threshold = threshold
 
@@ -123,7 +126,7 @@ class ResultImage:
         類似度が閾値以上の座標に矩形を置いた際の輪郭とそれによって取得した輪郭全体を囲うようにトリミングした回転画像を取得する
         Args:
             img_rot (img_bgr): 回転画像
-            res (img_th): マッチング結果類似度  # TODO: img_thではない。
+            res (np.ndarray): マッチング結果類似度
             pattern_img (img_bgr): パターン画像
 
         Returns:
@@ -263,7 +266,7 @@ class ResultImage:
             contours (list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]): 輪郭のリスト
 
         Returns:
-            int: 製品検出時の閾値  # TODO: float
+            float: 製品検出時の閾値
         """
         area_list = [cv2.contourArea(cnt) for cnt in contours]
         max_area = max(area_list)

@@ -3,7 +3,7 @@ from decimal import Decimal, ROUND_DOWN
 import numpy as np
 import cv2
 
-from edge import EdgeGetter
+from line import LineGetter
 
 
 class ImageRotater:
@@ -23,7 +23,7 @@ class ImageRotater:
         self._threshold_decrease_value = threshold_decrease_value
         self._max_gap = max_gap
 
-        self.edge = EdgeGetter()
+        self.line = LineGetter()
 
     def list_of_degree(self, lines):
         """
@@ -54,7 +54,7 @@ class ImageRotater:
         result_deg = None
         for deg in deg_list[:self._number_to_take_from_list]:
             img_canny_rot = self.rotation(img_canny, deg)
-            horizontal_lines, _, _ = self.edge.detect_line(img_canny_rot, min_length, threshold)
+            horizontal_lines, _, _ = self.line.detect_line(img_canny_rot, min_length, threshold)
             horizontal_deg_list = [self._round_angle(horizontal_line) for horizontal_line in horizontal_lines
                                    if horizontal_lines is not None]
             # 正しく回転している場合は-0.5°~0.5°の角度以外は検出されない(?)
@@ -147,12 +147,12 @@ if __name__ == '__main__':
 
     pre = Preprocess(width_, height_)
     load = LoadPerspectiveNumFile()
-    edge = EdgeGetter()
+    line = LineGetter()
     rot = ImageRotater()
     pers = PerspectiveTransformer(width_, height_, load.pts)
 
     img_th_ = pre._img_pre_process(img_orig_)
-    lines_, min_length_, threshold_ = edge.detect_line(img_th_, min_length_, threshold_)
+    lines_, min_length_, threshold_ = line.detect_line(img_th_, min_length_, threshold_)
     if lines_ is None:  # 画像に製品が無い等で直線が検出されないとき
         img_trans_rot = img_orig_
 

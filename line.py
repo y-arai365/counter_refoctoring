@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 
-class EdgeGetter:  # TODO: エッジではなく直線検出では。
+class LineGetter:
     def __init__(self, min_length_decrease_value=50, threshold_decrease_value=50, max_gap=30):
         """
         画像から直線が検出されたときに画像を回転させるクラス
@@ -55,10 +55,10 @@ if __name__ == '__main__':
 
     # TODO: ここではEdgeGetter()に関してだけ書けばいいので、Preprocessは要らない
     pre = Preprocess(width_, height_)
-    edge = EdgeGetter()
+    line = LineGetter()
 
     img_th_ = pre._img_pre_process(img_orig_)
-    lines_, min_length_, threshold_ = edge.detect_line(img_th_, min_length_, threshold_)
+    lines_, min_length_, threshold_ = line.detect_line(img_th_, min_length_, threshold_)
     print(lines_)
     print(min_length_)
     print(threshold_)

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 from perspective_transform import PerspectiveTransformer
-from edge import EdgeGetter
+from line import LineGetter
 from rotation import ImageRotater
 
 
@@ -22,9 +22,10 @@ class Preprocess:
             width (int): オリジナル画像の幅
             height (int): オリジナル画像の高さ
         """
-        self._load_pers_num_file = LoadPerspectiveNumFile()  # TODO: インスタンス変数に置く必要なし。
-        self._perspective = PerspectiveTransformer(width, height, self._load_pers_num_file.pts)
-        self._edge = EdgeGetter()
+        # self._load_pers_num_file = LoadPerspectiveNumFile()  # TODO: インスタンス変数に置く必要なし。
+        # self._perspective = PerspectiveTransformer(width, height, self._load_pers_num_file.pts)
+        self._perspective = PerspectiveTransformer(width, height, LoadPerspectiveNumFile().pts)
+        self._line = LineGetter()
         self._rotate = ImageRotater()
 
         self._kernel = np.ones((k_size, k_size), np.uint8)
@@ -45,7 +46,7 @@ class Preprocess:
         img_canny = self._img_pre_process(img)
         # 直線を検出、そのときの閾値・最小直線距離を取得
         # TODO: EdgeGetter（直線検出）をImageRotaterの中に入れてしまっていいのでは。
-        lines, min_length, threshold = self._edge.detect_line(img_canny, first_min_length, first_threshold)
+        lines, min_length, threshold = self._line.detect_line(img_canny, first_min_length, first_threshold)
         if lines is None:  # 画像に製品が無い等で直線が検出されないとき
             img_trans_rot = img
             return img_trans_rot

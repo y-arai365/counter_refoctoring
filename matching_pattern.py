@@ -186,14 +186,9 @@ class ResultImage:
             img_th: マッチング範囲を白い矩形に変えた黒画像
         """
         loc = np.where(res >= self.threshold)
-        for pt in zip(*loc[::-1]):
-            cv2.rectangle(black, pt, (pt[0] + w, pt[1] + h), 255, -1)
-            self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
-
-        # TODO: pycharmの警告回避。
-        # for x, y in zip(*loc[::-1]):
-        #     cv2.rectangle(black, (x, y), (x + w, y + h), 255, -1)
-        #     self._add_gap(black, (x, y), (x + w, y + h))
+        for x, y in zip(*loc[::-1]):
+            cv2.rectangle(black, (x, y), (x + w, y + h), 255, -1)
+            self._add_gap(black, (x, y), (x + w, y + h))
 
         return black
 

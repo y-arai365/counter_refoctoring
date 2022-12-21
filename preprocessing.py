@@ -1,15 +1,8 @@
 import cv2
 import numpy as np
 
-from perspective_transform import PerspectiveTransformer
-from edge import EdgeGetter
+from perspective_transform import PerspectiveTransformer, LoadPerspectiveNumFile
 from rotation import ImageRotater
-
-
-class LoadPerspectiveNumFile:
-    def __init__(self, pers_num_path="pers_num.npy"):
-        self.pers_num_path = pers_num_path
-        self.pts = np.load(self.pers_num_path)[0]
 
 
 class Preprocess:
@@ -21,10 +14,8 @@ class Preprocess:
             width (int): オリジナル画像の幅
             height (int): オリジナル画像の高さ
         """
-        self._load_pers_num_file = LoadPerspectiveNumFile()
-        self._perspective = PerspectiveTransformer(width, height, self._load_pers_num_file.pts)
-        self._edge = EdgeGetter()
         self._rotate = ImageRotater()
+        self._perspective = PerspectiveTransformer(width, height, LoadPerspectiveNumFile().pts)
 
         self._kernel = np.ones((k_size, k_size), np.uint8)
         self._canny_threshold_1 = canny_threshold_1
@@ -41,19 +32,32 @@ class Preprocess:
         Returns:
             img_bgr: 射影変換・回転後の画像
         """
-        img_canny = self._img_pre_process(img)
+        img_canny = self._detect_edge_from_original_img(img)
         # 直線を検出、そのときの閾値・最小直線距離を取得
-        lines, min_length, threshold = self._edge.detect_line(img_canny, first_min_length, first_threshold)
+        lines, min_length, threshold = self._rotate.detect_line(img_canny, first_min_length, first_threshold)
         if lines is None:  # 画像に製品が無い等で直線が検出されないとき
             img_trans_rot = img
             return img_trans_rot
-        deg_list = self._rotate.list_of_degree(lines)
+        deg_list = self._list_of_degree(lines)
         result_deg = self._rotate.get_result_deg(deg_list, img_canny, min_length, threshold)
         img_trans = self._perspective.transform(img)
         img_trans_rot = self._rotate.rotation(img_trans, result_deg)
         return img_trans_rot
 
-    def _img_pre_process(self, img):
+    def _list_of_degree(self, lines):
+        """
+        linesを基にして、傾いている角度のリスト取得
+
+        Args:
+            lines(list(np.ndarray(X, 1, 4),) or None): 直線のリスト(右x, 右y, 左x, 左y) or None
+
+        Returns:
+            list(float): 直線の座標をもとにした角度のリスト
+        """
+        deg_list_set = {self._rotate.degree(line[0][0], line[0][1], line[0][2], line[0][3]) for line in lines}
+        return list(deg_list_set)
+
+    def _detect_edge_from_original_img(self, img):
         """
         直線検出前の事前処理
         Args:
@@ -132,3 +136,4 @@ if __name__ == '__main__':
     cv2.imshow("img", img_trans_rot_)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    cv2.imwrite("preprocessing.png", img_trans_rot_)

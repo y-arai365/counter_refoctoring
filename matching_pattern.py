@@ -21,47 +21,32 @@ class Matching:
         self._pattern_3_file_name = "pattern3.jpg"
         self._pattern_4_file_name = "pattern4.jpg"
 
-    def get_matching_result(self, img_rot, dir_path):
+    def choose_suitable_result_and_pattern_img(self, img_rot, dir_path):
         """
-        回転画像にテンプレートマッチングをかけて、マッチした結果画像を返す
+        複数あるマッチング結果とパターン画像から適切なものをマッチングした時のカウント結果から選ぶ
 
         Args:
             img_rot (img_bgr): 回転画像
             dir_path (string): パターン画像の保存先、フォルダ名
 
         Returns:
-            img_th, img_bgr: マッチング結果画像(類似度の配列)、パターン画像
-        """
-        pattern_img = self._choose_suitable_pattern_img(img_rot, dir_path)
-        return self._template_match(img_rot, pattern_img), pattern_img
-
-    def _choose_suitable_pattern_img(self, img_rot, dir_path):
-        """
-        # TODO: ここでcv2.matchTemplateを４回やって、一番良さそうなパターン画像を見つけてもう一回get_matching_resultでcv2.matchTemplateの返り値を取得してる。
-                だったら、最初からcv2.matchTemplateの返り値を返すようにしておけば一回分節約できるのでは。
-
-        複数あるパターン画像から適切なものを選ぶ
-
-        Args:
-            img_rot (img_bgr): 回転画像
-            dir_path (string): パターン画像の保存先、フォルダ名
-
-        Returns:
-            img_bgr: マッチングに使うパターン画像
+            np.ndarray, img_bgr: マッチング結果画像(類似度の配列)、パターン画像
         """
         p = Pool(4)
         args = [(img_rot, cv2.imread(dir_path + self._pattern_1_file_name)),
                 (img_rot, cv2.imread(dir_path + self._pattern_2_file_name)),
                 (img_rot, cv2.imread(dir_path + self._pattern_3_file_name)),
                 (img_rot, cv2.imread(dir_path + self._pattern_4_file_name))]
-        count_list = p.starmap(self._get_matching_count_and_pass_pattern_img, args)
+        count_and_result_list = p.starmap(self._get_matching_count_and_matching_result, args)
+        count_list = [result_and_count[0] for result_and_count in count_and_result_list]
         max_index = count_list.index(max(count_list))
+        result = count_and_result_list[max_index][1]
         pattern_img = args[max_index][1]
-        return pattern_img
+        return result, pattern_img
 
-    def _get_matching_count_and_pass_pattern_img(self, img_rot, pattern_img):  # TODO: 関数名が変
+    def _get_matching_count_and_matching_result(self, img_rot, pattern_img):
         """
-        回転後画像とパターン画像をテンプレートマッチングして、その計数結果を返す
+        回転後画像とパターン画像をテンプレートマッチングして、そのカウント結果とマッチング結果を返す
         並列処理により4回処理される
 
         Args:
@@ -69,13 +54,13 @@ class Matching:
             pattern_img (img_bgr): パターン画像
 
         Returns:
-            int: カウント数(1つのパターン画像にいくつも矩形が表示されるので実際の製品数ではない)
+            int, np.ndarray: カウント数(1つの製品にいくつも矩形が表示されるので実際の製品数ではない), マッチング結果
         """
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
         pattern_img_gray = cv2.cvtColor(pattern_img, cv2.COLOR_BGR2GRAY)
         result = cv2.matchTemplate(img_rot_gray, pattern_img_gray, cv2.TM_CCOEFF_NORMED)
         match_count = np.count_nonzero(result >= self.threshold)
-        return match_count
+        return match_count, result
 
     @staticmethod
     def _template_match(img_rot, pattern):
@@ -177,7 +162,7 @@ class ResultImage:
         resをもとにマッチングした位置を白くした黒画像を作成
 
         Args:
-            res (img_th): cv2.matchTemplateの出力結果
+            res (np.ndarray): cv2.matchTemplateの出力結果
             black (img_th): 黒背景画像、回転画像がもと
             w (int): パターン画像の幅
             h (int): パターン画像の高さ
@@ -289,7 +274,7 @@ if __name__ == "__main__":
     img_rot_ = pre.preprocessing(img_, min_length_, threshold_)
 
     start = time.time()
-    res_, pattern_img_ = match_.get_matching_result(img_rot_, dir_path_)
+    res_, pattern_img_ = match_.choose_suitable_result_and_pattern_img(img_rot_, dir_path_)
     new_cons_, img_rot_trim_ = res_img_.get_contours_from_similarity_array_and_img_rot_trim(img_rot_, res_, pattern_img_)
     result_ = res_img_.draw_contours(img_rot_trim_, new_cons_)
     is_count_ = len(new_cons_)

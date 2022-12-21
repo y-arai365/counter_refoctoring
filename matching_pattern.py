@@ -78,22 +78,6 @@ class Matching:
         return match_count, result
 
     @staticmethod
-    def _template_match(img_rot, pattern):
-        """
-        BGR画像2枚を使ってテンプレートマッチング、グレースケールの方が検出しやすいため変換
-
-        Args:
-            img_rot (img_bgr): 全体画像
-            pattern (img_bgr): パターン画像
-
-        Returns:
-            np.ndarray: マッチング結果画像
-        """
-        img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
-        pattern_gray = cv2.cvtColor(pattern, cv2.COLOR_BGR2GRAY)
-        return cv2.matchTemplate(img_rot_gray, pattern_gray, cv2.TM_CCOEFF_NORMED)
-
-    @staticmethod
     def _find_threshold(contours):  # 閾値の返り値が各cntの1/5に必ずなる→_count関数でif area > area_threshold:してる意味がない(ノイズ除去？)
         """
         黒画像内で面積が最大の白領域の1/5を製品検出時の閾値にする
@@ -228,38 +212,6 @@ class ResultImage:
             img_th: 白矩形付き黒画像(白矩形同士にくっつき除去)
         """
         return cv2.rectangle(black, left_top, right_bottom, 0, self._thickness)
-
-    def _get_trim_coordinates(self, img_th):
-        """
-        白矩形付き黒画像から白矩形全体を囲うような範囲を取得し、そこから前後左右一定のpxずつ広げた点を取得する
-
-        Args:
-            img_th (img_th): 白矩形付き黒画像
-
-        Returns:
-            (int, int, int, int) : トリミング範囲(左上x, 右下x, 左上y, 右下y)
-        """
-        img_h, img_w = img_th.shape
-        img_th = cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, self._kernel)
-        contours, _ = cv2.findContours(img_th, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        if contours:
-            contour = np.vstack(contours)
-            x, y, w, h = cv2.boundingRect(contour)
-            x_left = x
-            x_right = x + w
-            y_top = y
-            y_bottom = y + h
-
-            x_min = max(x_left - self._margin_of_matching_range, 0)
-            y_min = max(y_top - self._margin_of_matching_range, 0)
-            x_max = min(x_right + self._margin_of_matching_range, img_w)
-            y_max = min(y_bottom + self._margin_of_matching_range, img_h)
-        else:  # 輪郭の取得ができなかったとき
-            x_min = 0
-            y_min = 0
-            x_max = img_w
-            y_max = img_h
-        return x_min, x_max, y_min, y_max
 
 
 if __name__ == "__main__":

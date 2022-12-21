@@ -15,10 +15,7 @@ class Preprocess:
             height (int): オリジナル画像の高さ
         """
         self._rotate = ImageRotater()
-        self._load_pers_num_file = LoadPerspectiveNumFile()
-
-        # self._load_pers_num_file = LoadPerspectiveNumFile()  # TODO: インスタンス変数に置く必要なし。
-        self._perspective = PerspectiveTransformer(width, height, self._load_pers_num_file.pts)
+        self._perspective = PerspectiveTransformer(width, height, LoadPerspectiveNumFile().pts)
 
         self._kernel = np.ones((k_size, k_size), np.uint8)
         self._canny_threshold_1 = canny_threshold_1
@@ -35,7 +32,7 @@ class Preprocess:
         Returns:
             img_bgr: 射影変換・回転後の画像
         """
-        img_canny = self._img_pre_process(img)
+        img_canny = self._detect_edge_from_original_img(img)
         # 直線を検出、そのときの閾値・最小直線距離を取得
         lines, min_length, threshold = self._rotate.detect_line(img_canny, first_min_length, first_threshold)
         if lines is None:  # 画像に製品が無い等で直線が検出されないとき
@@ -60,7 +57,7 @@ class Preprocess:
         deg_list_set = {self._rotate.degree(line[0][0], line[0][1], line[0][2], line[0][3]) for line in lines}
         return list(deg_list_set)
 
-    def _img_pre_process(self, img):  # TODO: 関数名が大雑把すぎる。エッジ検出？
+    def _detect_edge_from_original_img(self, img):
         """
         直線検出前の事前処理
         Args:

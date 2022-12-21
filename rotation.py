@@ -201,12 +201,12 @@ if __name__ == '__main__':
     rot = ImageRotater()
     pers = PerspectiveTransformer(width_, height_, load.pts)
 
-    img_th_ = pre._img_pre_process(img_orig_)
+    img_th_ = pre._detect_edge_from_original_img(img_orig_)
     lines_, min_length_, threshold_ = line.detect_line(img_th_, min_length_, threshold_)
     if lines_ is None:  # 画像に製品が無い等で直線が検出されないとき
         img_trans_rot = img_orig_
 
-    deg_list_ = rot.list_of_degree(lines_)
+    deg_list_ = pre._list_of_degree(lines_)
     result_deg_ = rot.get_result_deg(deg_list_, img_th_, min_length_, threshold_)
     img_trans_ = pers.transform(img_orig_)
     img_trans_rot_ = rot.rotation(img_trans_, result_deg_)

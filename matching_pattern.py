@@ -118,20 +118,19 @@ class ResultImage:
 
         self._match = Matching(threshold)
 
-    def get_contours_from_similarity_array_and_img_rot_trim(self, img_rot, res, pattern_img):
+    def get_contours_from_similarity_array(self, img_rot, res, pattern_img):
         """
-        類似度が閾値以上の座標に矩形を置いた際の輪郭とそれによって取得した輪郭全体を囲うようにトリミングした回転画像を取得する
+        類似度が閾値以上の座標に矩形を置いた際の輪郭を取得する
         Args:
             img_rot (img_bgr): 回転画像
             res (np.ndarray): マッチング結果類似度
             pattern_img (img_bgr): パターン画像
 
         Returns:
-            list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),], img_bgr: 一定の閾値以上の輪郭のリスト, 回転画像をトリミングしたもの
+            list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]: 一定の閾値以上の輪郭のリスト
         """
         img_binary_with_whitened_matching_positions = self._get_result_binary_img(img_rot, res, pattern_img)
-        new_cons = self._match.get_contours(img_binary_with_whitened_matching_positions)
-        return new_cons, img_rot
+        return self._match.get_contours(img_binary_with_whitened_matching_positions)
 
     def draw_contours(self, img, new_cons):
         """
@@ -224,7 +223,7 @@ if __name__ == "__main__":
 
     path_ = r"preprocessing.png"
     n = np.fromfile(path_, dtype=np.uint8)
-    img_rot_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
+    img_rot_trim_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
 
     threshold_ = 500
     min_length_ = 500
@@ -234,8 +233,8 @@ if __name__ == "__main__":
     res_img_ = ResultImage(k_size=15, threshold=matching_threshold_)
 
     start = time.time()
-    res_, pattern_img_ = match_.choose_suitable_result_and_pattern_img(img_rot_, dir_path_)
-    new_cons_, img_rot_trim_ = res_img_.get_contours_from_similarity_array_and_img_rot_trim(img_rot_, res_, pattern_img_)
+    res_, pattern_img_ = match_.choose_suitable_result_and_pattern_img(img_rot_trim_, dir_path_)
+    new_cons_ = res_img_.get_contours_from_similarity_array(img_rot_trim_, res_, pattern_img_)
     result_ = res_img_.draw_contours(img_rot_trim_, new_cons_)
     is_count_ = len(new_cons_)
     print(is_count_)

@@ -272,9 +272,9 @@ class Control(object):
                     res_img = ResultImage(15, self.matching_threshold)
                     # パターンマッチング
                     res, pattern_img = match.choose_suitable_result_and_pattern_img(img_rot, pattern_dir)
-                    contours, img_rot_trim = res_img.get_contours_from_similarity_array_and_img_rot_trim(img_rot, res, pattern_img)
+                    contours = res_img.get_contours_from_similarity_array(img_rot, res, pattern_img)
                     is_count = len(contours)
-                    result = res_img.draw_contours(img_rot_trim, contours)
+                    result = res_img.draw_contours(img_rot, contours)
                 else:
                     binary = pickle.dumps(frame)
                     pickle_copy = pickle.loads(binary)

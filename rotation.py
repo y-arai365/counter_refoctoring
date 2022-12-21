@@ -77,7 +77,7 @@ class ImageRotater:
         Returns:
             img_bgr: 回転後の画像
         """
-        rad = deg/180*np.pi  # TODO: np.deg2radと同じ？
+        rad = np.deg2rad(deg)
         h, w = img.shape[:2]
         # 回転後の画像サイズを計算
         w_rot = int(np.round(h * np.absolute(np.sin(rad)) + w * np.absolute(np.cos(rad))))

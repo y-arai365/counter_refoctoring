@@ -3,8 +3,6 @@ from decimal import Decimal, ROUND_DOWN
 import numpy as np
 import cv2
 
-from line import LineGetter
-
 
 class ImageRotater:
     def __init__(self, number_to_take_from_list=10, min_length_decrease_value=50, threshold_decrease_value=50,
@@ -24,19 +22,6 @@ class ImageRotater:
         self._max_gap = max_gap
 
         self.line = LineGetter()
-
-    def list_of_degree(self, lines):
-        """
-        linesを基にして、傾いている角度のリスト取得
-
-        Args:
-            lines(list(np.ndarray(X, 1, 4),) or None): 直線のリスト(右x, 右y, 左x, 左y) or None
-
-        Returns:
-            list(float): 直線の座標をもとにした角度のリスト
-        """
-        deg_list_set = {self._degree(line[0][0], line[0][1], line[0][2], line[0][3]) for line in lines}
-        return list(deg_list_set)
 
     def get_result_deg(self, deg_list, img_canny, min_length, threshold):
         """
@@ -90,7 +75,7 @@ class ImageRotater:
         return cv2.warpAffine(img, rotation_matrix, (w_rot, h_rot), flags=cv2.INTER_CUBIC)
 
     @staticmethod
-    def _degree(x1, y1, x2, y2):
+    def degree(x1, y1, x2, y2):
         """長辺が水平になるように、回転角を決める"""
         a, b = np.array([x1, y1]), np.array([x2, y2])
         vec = b - a
@@ -118,7 +103,7 @@ class ImageRotater:
     def _round_angle(self, line):
         """小数点第2位を丸めた角度リストを作成"""
         x1, y1, x2, y2 = line[0]
-        deg = self._degree(x1, y1, x2, y2)
+        deg = self.degree(x1, y1, x2, y2)
         deg_decimal = Decimal(deg).quantize(Decimal("0.1"), rounding=ROUND_DOWN)
         deg = float(deg_decimal)
         return deg
@@ -131,6 +116,71 @@ class ImageRotater:
         condition = deg_abs_list - deg_abs_min < 30  # 角度の絶対値の最小より30以上離れている角度は削除
         new_deg_list = np.array(deg_list)[condition]
         return np.median(new_deg_list)
+
+    def detect_line(self, img_th, min_length, threshold):
+        """
+        二値化画像から直線を検出
+
+        Args:
+            img_th (img_th): 製品の輪郭を表示した二値化画像
+            min_length (int): 直線検出するときの最小直線距離
+            threshold (int): 直線検出するときの閾値
+
+        Returns:
+            list(np.ndarray(X, 1, 4),) or None, int, int: 直線のリスト(右x, 右y, 左x, 左y) or None, 直線検出時の最小直線距離, 直線検出時の閾値
+        """
+        lines = None
+        while min_length > 0:
+            while threshold > 0:
+                lines = cv2.HoughLinesP(img_th, 1, np.pi / 720,  # 角度は0.25°ずつ検出
+                                        threshold=threshold, minLineLength=min_length, maxLineGap=self._max_gap)
+                if lines is not None:
+                    return lines, min_length, threshold
+                else:
+                    threshold -= self._threshold_decrease_value
+            if lines is None:
+                min_length -= self._min_length_decrease_value
+        return None, min_length, threshold
+
+
+class LineGetter:
+    def __init__(self, min_length_decrease_value=50, threshold_decrease_value=50, max_gap=30):
+        """
+        画像から直線が検出されたときに画像を回転させるクラス
+
+        Args:
+            min_length_decrease_value: 二値化画像から直線を検出出来なかった時に減らす、直線検出時の最小直線距離の数値
+            threshold_decrease_value:  二値化画像から直線を検出出来なかった時に減らす、直線検出時の閾値の数値
+            max_gap: 線同士が離れていても同一の直線だと判断する最大値
+        """
+        self._min_length_decrease_value = min_length_decrease_value
+        self._threshold_decrease_value = threshold_decrease_value
+        self._max_gap = max_gap
+
+    def detect_line(self, img_th, min_length, threshold):
+        """
+        二値化画像から直線を検出
+
+        Args:
+            img_th (img_th): 製品の輪郭を表示した二値化画像
+            min_length (int): 直線検出するときの最小直線距離
+            threshold (int): 直線検出するときの閾値
+
+        Returns:
+            list(np.ndarray(X, 1, 4),) or None, int, int: 直線のリスト(右x, 右y, 左x, 左y) or None, 直線検出時の最小直線距離, 直線検出時の閾値
+        """
+        lines = None
+        while min_length > 0:
+            while threshold > 0:
+                lines = cv2.HoughLinesP(img_th, 1, np.pi / 720,  # 角度は0.25°ずつ検出
+                                        threshold=threshold, minLineLength=min_length, maxLineGap=self._max_gap)
+                if lines is not None:
+                    return lines, min_length, threshold
+                else:
+                    threshold -= self._threshold_decrease_value
+            if lines is None:
+                min_length -= self._min_length_decrease_value
+        return None, min_length, threshold
 
 
 if __name__ == '__main__':

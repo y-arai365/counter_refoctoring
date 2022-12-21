@@ -90,13 +90,18 @@ class PerspectiveTransformer:
         return round(x_max - x_min), round(y_max - y_min)
 
 
+class LoadPerspectiveNumFile:
+    def __init__(self, pers_num_path="pers_num.npy"):
+        self.pts = np.load(pers_num_path)[0]
+
+
 if __name__ == '__main__':
-    pers_num_path = "pers_num.npy"
-    image_path = r"pre_.jpg"
+    pers_num_path_ = "pers_num.npy"
+    image_path_ = r"pre_.jpg"
     # image_path = r"C:\Users\pc011\Desktop\test\counter\exp-4.jpg"
 
-    pts = np.load(pers_num_path)[0]
-    img_orig = cv2.imread(image_path)
+    pts = np.load(pers_num_path_)[0]
+    img_orig = cv2.imread(image_path_)
 
     height, width = img_orig.shape[:2]
 

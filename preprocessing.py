@@ -136,3 +136,4 @@ if __name__ == '__main__':
     cv2.imshow("img", img_trans_rot_)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    cv2.imwrite("preprocessing.png", img_trans_rot_)

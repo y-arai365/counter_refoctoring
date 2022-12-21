@@ -263,24 +263,23 @@ class ResultImage:
 
 
 if __name__ == "__main__":
-    from preprocessing import Preprocess
     import time
 
-    path_ = r""
-    dir_path_ = r""
+    # path_ = r"count\result\20221130\20220921-2\0\上7\frame.jpg"
+    dir_path_ = r"count/pattern/20220921-2/"
+    # path_ = r"E:\frame\087\20221219123333_12553.png"
+    # dir_path_ = r"E:/pattern/087/"
+
+    path_ = r"preprocessing.png"
+    n = np.fromfile(path_, dtype=np.uint8)
+    img_rot_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
 
     threshold_ = 500
     min_length_ = 500
     matching_threshold_ = 0.85
 
-    n = np.fromfile(path_, dtype=np.uint8)
-    img_ = cv2.imdecode(n, cv2.IMREAD_COLOR)
-    height, width = img_.shape[:2]
-    pre = Preprocess(width, height)  # TODO: ここではMatching, ResultImageに関してだけ書けばいいので、Preprocessは要らない
     match_ = Matching(threshold=matching_threshold_)
     res_img_ = ResultImage(k_size=15, threshold=matching_threshold_)
-
-    img_rot_ = pre.preprocessing(img_, min_length_, threshold_)
 
     start = time.time()
     res_, pattern_img_ = match_.choose_suitable_result_and_pattern_img(img_rot_, dir_path_)

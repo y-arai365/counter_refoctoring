@@ -184,8 +184,8 @@ class LineGetter:
 
 
 if __name__ == '__main__':
-    from preprocessing import Preprocess, LoadPerspectiveNumFile
-    from perspective_transform import PerspectiveTransformer
+    from preprocessing import Preprocess
+    from perspective_transform import PerspectiveTransformer, LoadPerspectiveNumFile
 
     threshold_ = 500
     min_length_ = 500

@@ -78,6 +78,36 @@ class Matching:
         pattern_gray = cv2.cvtColor(pattern, cv2.COLOR_BGR2GRAY)
         return cv2.matchTemplate(img_rot_gray, pattern_gray, cv2.TM_CCOEFF_NORMED)
 
+    def get_contours(self, black):
+        """
+        白矩形付き黒画像から一定の閾値(面積)以上の輪郭を取得
+
+        Args:
+            black (img_th): 白矩形付き黒画像
+
+        Returns:
+            list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]: 一定の閾値以上の輪郭のリスト
+        """
+        contours, _ = cv2.findContours(black, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        area_threshold = self._find_threshold(contours)
+        new_cons = [cnt for cnt in contours if cv2.contourArea(cnt) > area_threshold]
+        return new_cons
+
+    @staticmethod
+    def _find_threshold(contours):  # 閾値の返り値が各cntの1/5に必ずなる→_count関数でif area > area_threshold:してる意味がない(ノイズ除去？)
+        """
+        黒画像内で面積が最大の白領域の1/5を製品検出時の閾値にする
+
+        Args:
+            contours (list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]): 輪郭のリスト
+
+        Returns:
+            float: 製品検出時の閾値
+        """
+        area_list = [cv2.contourArea(cnt) for cnt in contours]
+        max_area = max(area_list)
+        return max_area / 5
+
 
 class ResultImage:
     def __init__(self, k_size, threshold, margin_of_matching_range=200, thickness=3,
@@ -102,6 +132,8 @@ class ResultImage:
         self._grayscale_of_matching_cover = grayscale_of_matching_cover
         self._color_drawing_match_result = color_drawing_match_result
 
+        self._match = Matching(threshold)
+
     def get_contours_from_similarity_array_and_img_rot_trim(self, img_rot, res, pattern_img):
         """
         # TODO: 最終的な製品の輪郭の取得と画像のトリミング、二つを一か所でやらずに分けたい。
@@ -117,14 +149,14 @@ class ResultImage:
         Returns:
             list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),], img_bgr: 一定の閾値以上の輪郭のリスト, 回転画像をトリミングしたもの
         """
+        img_binary_with_whitened_matching_positions = self._get_result_binary_img(img_rot, res, pattern_img)
+        new_cons = self._match.get_contours(img_binary_with_whitened_matching_positions)
+        return new_cons, img_rot
+
+    def _get_result_binary_img(self, img_rot, res, pattern_img):
         pattern_h, pattern_w = pattern_img.shape[:2]
         black_back = self._get_black_back(img_rot)
-        img_black_back_and_white_rect = self._get_img_binary_chip(res, black_back, pattern_w, pattern_h)  # TODO: 変数名、関数名がわかりずらい。
-        x_min, x_max, y_min, y_max = self._get_trim_coordinates(img_black_back_and_white_rect)
-        img_rot = img_rot[y_min:y_max, x_min:x_max]
-        img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
-        new_cons = self._get_contours(img_black_back_and_white_rect)
-        return new_cons, img_rot
+        return self._get_img_binary_with_whitened_matching_positions(res, black_back, pattern_w, pattern_h)
 
     def draw_contours(self, img, new_cons):
         """
@@ -157,7 +189,7 @@ class ResultImage:
         h, w = img_rot.shape[:2]
         return np.zeros((h, w), np.uint8)
 
-    def _get_img_binary_chip(self, res, black, w, h):
+    def _get_img_binary_with_whitened_matching_positions(self, res, black, w, h):
         """
         resをもとにマッチングした位置を白くした黒画像を作成
 
@@ -221,36 +253,6 @@ class ResultImage:
             x_max = img_w
             y_max = img_h
         return x_min, x_max, y_min, y_max
-
-    def _get_contours(self, black):
-        """
-        白矩形付き黒画像から一定の閾値(面積)以上の輪郭を取得
-
-        Args:
-            black (img_th): 白矩形付き黒画像
-
-        Returns:
-            list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]: 一定の閾値以上の輪郭のリスト
-        """
-        contours, _ = cv2.findContours(black, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        area_threshold = self._find_threshold(contours)
-        new_cons = [cnt for cnt in contours if cv2.contourArea(cnt) > area_threshold]
-        return new_cons
-
-    @staticmethod
-    def _find_threshold(contours):  # 閾値の返り値が各cntの1/5に必ずなる→_count関数でif area > area_threshold:してる意味がない(ノイズ除去？)
-        """
-        黒画像内で面積が最大の白領域の1/5を製品検出時の閾値にする
-
-        Args:
-            contours (list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]): 輪郭のリスト
-
-        Returns:
-            float: 製品検出時の閾値
-        """
-        area_list = [cv2.contourArea(cnt) for cnt in contours]
-        max_area = max(area_list)
-        return max_area / 5
 
 
 if __name__ == "__main__":

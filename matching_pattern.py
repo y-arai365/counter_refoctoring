@@ -21,18 +21,16 @@ class Matching:
         self._pattern_3_file_name = "pattern3.jpg"
         self._pattern_4_file_name = "pattern4.jpg"
 
-        self.pattern_img = None
-
-    def get_res(self, img_rot, dir_path):
+    def get_matching_result(self, img_rot, dir_path):
         """
-        回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
+        回転画像にテンプレートマッチングをかけて、マッチした結果画像を返す
 
         Args:
             img_rot (img_bgr): 回転画像
             dir_path (string): パターン画像の保存先、フォルダ名
 
         Returns:
-            img_th, img_bgr: マッチング結果画像、パターン画像
+            img_th, img_bgr: マッチング結果画像(類似度の配列)、パターン画像
         """
         pattern_img = self._choose_suitable_pattern_img(img_rot, dir_path)
         return self._template_match(img_rot, pattern_img), pattern_img
@@ -49,39 +47,32 @@ class Matching:
             img_bgr: マッチングに使うパターン画像
         """
         p = Pool(4)
-        args = [(img_rot, self._get_pattern_image(dir_path + self._pattern_1_file_name)),
-                (img_rot, self._get_pattern_image(dir_path + self._pattern_2_file_name)),
-                (img_rot, self._get_pattern_image(dir_path + self._pattern_3_file_name)),
-                (img_rot, self._get_pattern_image(dir_path + self._pattern_4_file_name))]
-        count_and_pattern_img_list = p.map(self._get_matching_count_and_pass_pattern_img, args)
-        count_list = [count_and_pattern_img[0] for count_and_pattern_img in count_and_pattern_img_list]
-        max_value = max(count_list)
-        max_index = count_list.index(max_value)
-        pattern_img = count_and_pattern_img_list[max_index][1]
+        args = [(img_rot, cv2.imread(dir_path + self._pattern_1_file_name)),
+                (img_rot, cv2.imread(dir_path + self._pattern_2_file_name)),
+                (img_rot, cv2.imread(dir_path + self._pattern_3_file_name)),
+                (img_rot, cv2.imread(dir_path + self._pattern_4_file_name))]
+        count_list = p.starmap(self._get_matching_count_and_pass_pattern_img, args)
+        max_index = count_list.index(max(count_list))
+        pattern_img = args[max_index][1]
         return pattern_img
 
-    @staticmethod
-    def _get_pattern_image(file_name):
-        """パターン画像の取得"""
-        return cv2.imread(file_name)
-
-    def _get_matching_count_and_pass_pattern_img(self, arg):
+    def _get_matching_count_and_pass_pattern_img(self, img_rot, pattern_img):
         """
-        回転後画像とパターン画像のテンプレートマッチングの計数結果とファイル名を返す
+        回転後画像とパターン画像をテンプレートマッチングして、その計数結果を返す
         並列処理により4回処理される
 
         Args:
-            arg ([(img_bgr, img_bgr),]): 回転後画像、パターン画像
+            img_rot (img_bgr): 回転後画像
+            pattern_img (img_bgr): パターン画像
 
         Returns:
-            int, img_bgr: カウント数(1つのパターン画像にいくつも矩形が表示されるので実際の製品数ではない)、パターン画像
+            int: カウント数(1つのパターン画像にいくつも矩形が表示されるので実際の製品数ではない)
         """
-        img_rot, pattern_img = arg
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
         pattern_img_gray = cv2.cvtColor(pattern_img, cv2.COLOR_BGR2GRAY)
         result = cv2.matchTemplate(img_rot_gray, pattern_img_gray, cv2.TM_CCOEFF_NORMED)
         match_count = np.count_nonzero(result >= self.threshold)
-        return match_count, pattern_img
+        return match_count
 
     @staticmethod
     def _template_match(img_rot, pattern):
@@ -93,7 +84,7 @@ class Matching:
             pattern (img_bgr): パターン画像
 
         Returns:
-            img_th: マッチング結果画像
+            np.ndarray: マッチング結果画像
         """
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
         pattern_gray = cv2.cvtColor(pattern, cv2.COLOR_BGR2GRAY)
@@ -101,8 +92,8 @@ class Matching:
 
 
 class ResultImage:
-    def __init__(self, k_size, threshold, margin_of_matching_range=200,
-                 threshold_of_matching_cover=100, color_drawing_match_result=(30, 255, 0)):
+    def __init__(self, k_size, threshold, margin_of_matching_range=200, thickness=3,
+                 grayscale_of_matching_cover=100, color_drawing_match_result=(30, 255, 0)):
         """
         マッチングの結果を画像に描画するクラス
 
@@ -113,33 +104,48 @@ class ResultImage:
         self.threshold = threshold
 
         self._kernel = np.ones((k_size, k_size), np.uint8)
+        self._thickness = thickness
 
         self._margin_of_matching_range = margin_of_matching_range
-        self._threshold_of_matching_cover = threshold_of_matching_cover
+        self._grayscale_of_matching_cover = grayscale_of_matching_cover
         self._color_drawing_match_result = color_drawing_match_result
 
-    def get_result_img_and_count_result(self, img_rot, res, pattern_img):
+    def get_contours_from_similarity_array_and_img_rot_trim(self, img_rot, res, pattern_img):
         """
-        回転画像にテンプレートマッチングをかけて、マッチした製品を緑で描画した画像とその製品数を返す
-
+        類似度が閾値以上の座標に矩形を置いた際の輪郭とそれによって取得した輪郭全体を囲うようにトリミングした回転画像を取得する
         Args:
             img_rot (img_bgr): 回転画像
-            res (img_th): マッチング結果画像
+            res (img_th): マッチング結果類似度
             pattern_img (img_bgr): パターン画像
 
         Returns:
-            img_bgr, int: 結果描画後の画像、計数結果
+            list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),], img_bgr: 一定の閾値以上の輪郭のリスト, 回転画像をトリミングしたもの
         """
         pattern_h, pattern_w = pattern_img.shape[:2]
         black_back = self._get_black_back(img_rot)
-        img_black_back_and_white_rect = self._get_img_black_back_and_white_rect(res, black_back, pattern_w, pattern_h)
+        img_black_back_and_white_rect = self._get_img_binary_chip(res, black_back, pattern_w, pattern_h)
         x_min, x_max, y_min, y_max = self._get_trim_coordinates(img_black_back_and_white_rect)
         img_rot = img_rot[y_min:y_max, x_min:x_max]
         img_black_back_and_white_rect = img_black_back_and_white_rect[y_min:y_max, x_min:x_max]
         new_cons = self._get_contours(img_black_back_and_white_rect)
-        count_result = len(new_cons)
-        result_img = self._draw_contours(img_rot, new_cons)
-        return result_img, count_result
+        return new_cons, img_rot
+
+    def draw_contours(self, img, new_cons):
+        """
+        輪郭リストを基に回転画像に検出位置を描画
+
+        Args:
+            img (img_bgr): 回転画像
+            new_cons (list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]): 輪郭のリスト
+
+        Returns:
+            img_bgr: 検出位置を緑の矩形で描画して示した画像
+        """
+        img_h, img_w = img.shape[:2]
+        gray = np.ones((img_h, img_w, 3), np.uint8) * self._grayscale_of_matching_cover
+        gray = cv2.drawContours(gray, new_cons, -1, self._color_drawing_match_result, -1)
+        result = cv2.addWeighted(img, 0.5, gray, 0.5, 0)
+        return result
 
     @staticmethod
     def _get_black_back(img_rot):
@@ -153,10 +159,9 @@ class ResultImage:
             img_th: 黒画像
         """
         h, w = img_rot.shape[:2]
-        black_back = np.zeros((h, w))
-        return black_back.astype(np.uint8)
+        return np.zeros((h, w), np.uint8)
 
-    def _get_img_black_back_and_white_rect(self, res, black, w, h):
+    def _get_img_binary_chip(self, res, black, w, h):
         """
         resをもとにマッチングした位置を白くした黒画像を作成
 
@@ -172,12 +177,25 @@ class ResultImage:
         loc = np.where(res >= self.threshold)
         for pt in zip(*loc[::-1]):
             cv2.rectangle(black, pt, (pt[0] + w, pt[1] + h), 255, -1)
-            black = self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
+            self._add_gap(black, pt, (pt[0] + w, pt[1] + h))
         return black
+
+    def _add_gap(self, black, left_top, right_bottom):
+        """
+        白矩形付き黒画像の矩形同士がくっついているかもしれないので、黒い矩形を描画して切り離す
+        Args:
+            black (img_th): 白矩形付き黒画像
+            left_top ((int, int)): 白矩形の左上
+            right_bottom ((int, int)): 白矩形の右下
+
+        Returns:
+            img_th: 白矩形付き黒画像(白矩形同士にくっつき除去)
+        """
+        return cv2.rectangle(black, left_top, right_bottom, 0, self._thickness)
 
     def _get_trim_coordinates(self, img_th):
         """
-        白矩形付き黒画像から白矩形全体を囲うような範囲を取得し、そこから前後左右200pxずつ広げた点を取得する
+        白矩形付き黒画像から白矩形全体を囲うような範囲を取得し、そこから前後左右一定のpxずつ広げた点を取得する
 
         Args:
             img_th (img_th): 白矩形付き黒画像
@@ -188,7 +206,7 @@ class ResultImage:
         img_h, img_w = img_th.shape
         img_th = cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, self._kernel)
         contours, _ = cv2.findContours(img_th, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        if contours != 0:
+        if contours:
             contour = np.vstack(contours)
             x, y, w, h = cv2.boundingRect(contour)
             x_left = x
@@ -222,37 +240,6 @@ class ResultImage:
         new_cons = [cnt for cnt in contours if cv2.contourArea(cnt) > area_threshold]
         return new_cons
 
-    def _draw_contours(self, img, new_cons):
-        """
-        輪郭リストを基に回転画像に検出位置を描画
-
-        Args:
-            img (img_bgr): 回転画像
-            new_cons (list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]): 輪郭のリスト
-
-        Returns:
-            img_bgr: 検出位置を緑の矩形で描画して示した画像
-        """
-        img_h, img_w = img.shape[:2]
-        gray = np.ones((img_h, img_w, 3), np.uint8) * self._threshold_of_matching_cover
-        gray = cv2.drawContours(gray, new_cons, -1, self._color_drawing_match_result, -1)
-        result = cv2.addWeighted(img, 0.5, gray, 0.5, 0)
-        return result
-
-    @staticmethod
-    def _add_gap(black, top_left, bottom_right):
-        """
-        白矩形付き黒画像の矩形同士がくっついているかもしれないので、黒い矩形を描画して切り離す
-        Args:
-            black (img_th): 白矩形付き黒画像
-            top_left (): 白矩形の左上
-            bottom_right (): 白矩形の右下
-
-        Returns:
-            img_th: 白矩形付き黒画像(白矩形同士にくっつき除去)
-        """
-        return cv2.rectangle(black, top_left, bottom_right, 0, 3)
-
     @staticmethod
     def _find_threshold(contours):  # 閾値の返り値が各cntの1/5に必ずなる→_count関数でif area > area_threshold:してる意味がない(ノイズ除去？)
         """
@@ -266,15 +253,15 @@ class ResultImage:
         """
         area_list = [cv2.contourArea(cnt) for cnt in contours]
         max_area = max(area_list)
-        return int(max_area / 5)
+        return max_area / 5
 
 
 if __name__ == "__main__":
     from preprocessing import Preprocess
     import time
 
-    path_ = ""
-    dir_path_ = ""
+    path_ = r""
+    dir_path_ = r""
 
     threshold_ = 500
     min_length_ = 500
@@ -290,8 +277,10 @@ if __name__ == "__main__":
     img_rot_ = pre.preprocessing(img_, min_length_, threshold_)
 
     start = time.time()
-    res_, pattern_img_ = match_.get_res(img_rot_, dir_path_)
-    result_, is_count_ = res_img_.get_result_img_and_count_result(img_rot_, res_, pattern_img_)
+    res_, pattern_img_ = match_.get_matching_result(img_rot_, dir_path_)
+    new_cons_, img_rot_trim_ = res_img_.get_contours_from_similarity_array_and_img_rot_trim(img_rot_, res_, pattern_img_)
+    result_ = res_img_.draw_contours(img_rot_trim_, new_cons_)
+    is_count_ = len(new_cons_)
     print(is_count_)
 
     stop = time.time()

@@ -100,23 +100,6 @@ class ImageRotater:
             deg -= 90
         return deg
 
-    def _round_angle(self, line):
-        """小数点第2位を丸めた角度リストを作成"""
-        x1, y1, x2, y2 = line[0]
-        deg = self.degree(x1, y1, x2, y2)
-        deg_decimal = Decimal(deg).quantize(Decimal("0.1"), rounding=ROUND_DOWN)
-        deg = float(deg_decimal)
-        return deg
-
-    @staticmethod
-    def _get_median(deg_list):
-        """角度リストの中央値取得"""
-        deg_abs_list = np.abs(deg_list)
-        deg_abs_min = np.min(deg_abs_list)
-        condition = deg_abs_list - deg_abs_min < 30  # 角度の絶対値の最小より30以上離れている角度は削除
-        new_deg_list = np.array(deg_list)[condition]
-        return np.median(new_deg_list)
-
     def detect_line(self, img_th, min_length, threshold):
         """
         二値化画像から直線を検出
@@ -141,6 +124,23 @@ class ImageRotater:
             if lines is None:
                 min_length -= self._min_length_decrease_value
         return None, min_length, threshold
+
+    def _round_angle(self, line):
+        """小数点第2位を丸めた角度リストを作成"""
+        x1, y1, x2, y2 = line[0]
+        deg = self.degree(x1, y1, x2, y2)
+        deg_decimal = Decimal(deg).quantize(Decimal("0.1"), rounding=ROUND_DOWN)
+        deg = float(deg_decimal)
+        return deg
+
+    @staticmethod
+    def _get_median(deg_list):
+        """角度リストの中央値取得"""
+        deg_abs_list = np.abs(deg_list)
+        deg_abs_min = np.min(deg_abs_list)
+        condition = deg_abs_list - deg_abs_min < 30  # 角度の絶対値の最小より30以上離れている角度は削除
+        new_deg_list = np.array(deg_list)[condition]
+        return np.median(new_deg_list)
 
 
 class LineGetter:
@@ -197,12 +197,12 @@ if __name__ == '__main__':
 
     pre = Preprocess(width_, height_)
     load = LoadPerspectiveNumFile()
-    line = LineGetter()
+    line_ = LineGetter()
     rot = ImageRotater()
     pers = PerspectiveTransformer(width_, height_, load.pts)
 
     img_th_ = pre._detect_edge_from_original_img(img_orig_)
-    lines_, min_length_, threshold_ = line.detect_line(img_th_, min_length_, threshold_)
+    lines_, min_length_, threshold_ = line_.detect_line(img_th_, min_length_, threshold_)
     if lines_ is None:  # 画像に製品が無い等で直線が検出されないとき
         img_trans_rot = img_orig_
 

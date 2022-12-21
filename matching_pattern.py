@@ -44,6 +44,21 @@ class Matching:
         pattern_img = args[max_index][1]
         return result, pattern_img
 
+    def get_contours(self, black):
+        """
+        白矩形付き黒画像から一定の閾値(面積)以上の輪郭を取得
+
+        Args:
+            black (img_th): 白矩形付き黒画像
+
+        Returns:
+            list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]: 一定の閾値以上の輪郭のリスト
+        """
+        contours, _ = cv2.findContours(black, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        area_threshold = self._find_threshold(contours)
+        new_cons = [cnt for cnt in contours if cv2.contourArea(cnt) > area_threshold]
+        return new_cons
+
     def _get_matching_count_and_matching_result(self, img_rot, pattern_img):
         """
         回転後画像とパターン画像をテンプレートマッチングして、そのカウント結果とマッチング結果を返す
@@ -77,21 +92,6 @@ class Matching:
         img_rot_gray = cv2.cvtColor(img_rot, cv2.COLOR_BGR2GRAY)
         pattern_gray = cv2.cvtColor(pattern, cv2.COLOR_BGR2GRAY)
         return cv2.matchTemplate(img_rot_gray, pattern_gray, cv2.TM_CCOEFF_NORMED)
-
-    def get_contours(self, black):
-        """
-        白矩形付き黒画像から一定の閾値(面積)以上の輪郭を取得
-
-        Args:
-            black (img_th): 白矩形付き黒画像
-
-        Returns:
-            list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]: 一定の閾値以上の輪郭のリスト
-        """
-        contours, _ = cv2.findContours(black, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        area_threshold = self._find_threshold(contours)
-        new_cons = [cnt for cnt in contours if cv2.contourArea(cnt) > area_threshold]
-        return new_cons
 
     @staticmethod
     def _find_threshold(contours):  # 閾値の返り値が各cntの1/5に必ずなる→_count関数でif area > area_threshold:してる意味がない(ノイズ除去？)
@@ -136,10 +136,6 @@ class ResultImage:
 
     def get_contours_from_similarity_array_and_img_rot_trim(self, img_rot, res, pattern_img):
         """
-        # TODO: 最終的な製品の輪郭の取得と画像のトリミング、二つを一か所でやらずに分けたい。
-                最終的な製品の輪郭の取得（Non Maximum Suprresion的なやつ）はMatchingクラスが持ってるほうがいいかも。
-                トリミングはこっちでいい。だが、そもそもトリミングは必要なのか。
-
         類似度が閾値以上の座標に矩形を置いた際の輪郭とそれによって取得した輪郭全体を囲うようにトリミングした回転画像を取得する
         Args:
             img_rot (img_bgr): 回転画像
@@ -152,11 +148,6 @@ class ResultImage:
         img_binary_with_whitened_matching_positions = self._get_result_binary_img(img_rot, res, pattern_img)
         new_cons = self._match.get_contours(img_binary_with_whitened_matching_positions)
         return new_cons, img_rot
-
-    def _get_result_binary_img(self, img_rot, res, pattern_img):
-        pattern_h, pattern_w = pattern_img.shape[:2]
-        black_back = self._get_black_back(img_rot)
-        return self._get_img_binary_with_whitened_matching_positions(res, black_back, pattern_w, pattern_h)
 
     def draw_contours(self, img, new_cons):
         """
@@ -174,6 +165,22 @@ class ResultImage:
         gray = cv2.drawContours(gray, new_cons, -1, self._color_drawing_match_result, -1)
         result = cv2.addWeighted(img, 0.5, gray, 0.5, 0)
         return result
+
+    def _get_result_binary_img(self, img_rot, res, pattern_img):
+        """
+        製品のある部分を白の矩形で示した二値化画像を取得する
+
+        Args:
+            img_rot (img_rot): 回転画像
+            res (np.ndarray): マッチング結果類似度
+            pattern_img (img_bgr): パターン画像
+
+        Returns:
+            list[np.ndarray(shape=(x, 4, 1, 2), dtype=np.int32),]: 一定の閾値以上の輪郭のリスト
+        """
+        pattern_h, pattern_w = pattern_img.shape[:2]
+        black_back = self._get_black_back(img_rot)
+        return self._get_img_binary_with_whitened_matching_positions(res, black_back, pattern_w, pattern_h)
 
     @staticmethod
     def _get_black_back(img_rot):

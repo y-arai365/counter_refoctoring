@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 from perspective_transform import PerspectiveTransformer, LoadPerspectiveNumFile
-from rotation import ImageRotater
+from rotation import ImageRotater, LineGetter
 
 
 class Preprocess:
@@ -13,8 +13,12 @@ class Preprocess:
         Args:
             width (int): オリジナル画像の幅
             height (int): オリジナル画像の高さ
+            k_size (int): クロージング、エロードに使うカーネル値
+            canny_threshold_1 (int): canny法でエッジ検出するときに他のエッジと隣接するものか判断する閾値
+            canny_threshold_2 (int): canny法でエッジ検出するときにエッジか否か判断する閾値
         """
         self._rotate = ImageRotater()
+        self._line = LineGetter()
         self._perspective = PerspectiveTransformer(width, height, LoadPerspectiveNumFile().pts)
 
         self._kernel = np.ones((k_size, k_size), np.uint8)
@@ -24,6 +28,7 @@ class Preprocess:
     def preprocessing(self, img, first_min_length, first_threshold):
         """
         画像を射影変換、画像内の製品が水平になるように回転する
+
         Args:
             img (img_bgr): オリジナル画像
             first_min_length (int): 二値化画像から直線をハフ検出するときの初めの最小直線距離
@@ -34,7 +39,7 @@ class Preprocess:
         """
         img_canny = self._detect_edge_from_original_img(img)
         # 直線を検出、そのときの閾値・最小直線距離を取得
-        lines, min_length, threshold = self._rotate.detect_line(img_canny, first_min_length, first_threshold)
+        lines, min_length, threshold = self._line.detect_line(img_canny, first_min_length, first_threshold)
         if lines is None:  # 画像に製品が無い等で直線が検出されないとき
             img_trans_rot = img
             return img_trans_rot
@@ -60,6 +65,7 @@ class Preprocess:
     def _detect_edge_from_original_img(self, img):
         """
         直線検出前の事前処理
+
         Args:
             img (img_bgr): オリジナル画像
 

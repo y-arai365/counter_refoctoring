@@ -121,6 +121,7 @@ class ResultImage:
     def get_contours_from_similarity_array(self, img_rot, res, pattern_img):
         """
         類似度が閾値以上の座標に矩形を置いた際の輪郭を取得する
+
         Args:
             img_rot (img_bgr): 回転画像
             res (np.ndarray): マッチング結果類似度
@@ -196,7 +197,6 @@ class ResultImage:
         for x, y in zip(*loc[::-1]):
             cv2.rectangle(black, (x, y), (x + w, y + h), 255, -1)
             self._add_gap(black, (x, y), (x + w, y + h))
-
         return black
 
     def _add_gap(self, black, left_top, right_bottom):
